@@ -156,6 +156,9 @@ async def seed_batch():
                     print(f"✗ 失败，跳过")
                     failed.append(f"{museum.name} - {exhibit.name}")
 
+                # 每件间隔 3 秒，避免触发 rate limit
+                await asyncio.sleep(3)
+
             print()
 
         # 汇总
