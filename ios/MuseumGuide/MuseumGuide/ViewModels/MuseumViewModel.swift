@@ -9,6 +9,17 @@ final class MuseumViewModel {
     let api = APIClient.shared
     let location = LocationManager.shared
 
+    /// 定位失败时手动加载（用于体验/调试）
+    func loadTestMuseum() {
+        Task {
+            do {
+                currentMuseum = try await api.museumDetail(id: 1)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     func loadCurrentMuseum() async {
         isLoading = true
         errorMessage = nil

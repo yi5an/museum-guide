@@ -25,7 +25,15 @@ struct MapTabView: View {
             .navigationTitle(museumVM.currentMuseum?.name ?? "地图")
             .navigationBarTitleDisplayMode(.inline)
             .task {
-                await museumVM.loadCurrentMuseum()
+                // 地图 Tab 不重复 GPS 定位，直接加载博物馆详情
+                if museumVM.currentMuseum == nil {
+                    museumVM.loadTestMuseum()
+                }
+                // 等待加载完成
+                for _ in 0..<20 {
+                    if museumVM.currentMuseum != nil { break }
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                }
                 if let m = museumVM.currentMuseum { vm.bind(museum: m) }
             }
         }

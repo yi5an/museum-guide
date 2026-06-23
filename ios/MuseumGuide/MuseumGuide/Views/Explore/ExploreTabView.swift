@@ -3,6 +3,7 @@ import SwiftUI
 struct ExploreTabView: View {
     @State private var vm = MuseumViewModel()
     @State private var showCamera = false
+    @State private var selectedRoute: RouteDTO?
 
     var body: some View {
         NavigationStack {
@@ -21,7 +22,7 @@ struct ExploreTabView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
                         Button("手动选择博物馆") {
-                            // 预留：手动选馆
+                            vm.loadTestMuseum()
                         }
                         .foregroundStyle(.vermilion)
                     }
@@ -36,6 +37,9 @@ struct ExploreTabView: View {
             .refreshable { await vm.loadCurrentMuseum() }
             .sheet(isPresented: $showCamera) {
                 CameraView(currentMuseumId: vm.currentMuseum?.id)
+            }
+            .sheet(item: $selectedRoute) { route in
+                RouteDetailSheet(route: route, museumName: vm.currentMuseum?.name ?? "")
             }
         }
     }
@@ -118,23 +122,26 @@ struct ExploreTabView: View {
     }
 
     private func routeCard(route: RouteDTO) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "star.fill").foregroundStyle(.vermilion)
-                    .frame(width: 40, height: 40)
-                    .background(.vermilionSoft, in: RoundedRectangle(cornerRadius: 12))
-                Text(route.theme.uppercased()).font(.caption).foregroundStyle(.vermilion)
+        Button { selectedRoute = route } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "star.fill").foregroundStyle(.vermilion)
+                        .frame(width: 40, height: 40)
+                        .background(.vermilionSoft, in: RoundedRectangle(cornerRadius: 12))
+                    Text(route.theme.uppercased()).font(.caption).foregroundStyle(.vermilion)
+                }
+                Text(route.title).font(.body)
+                HStack(spacing: 12) {
+                    Label("\(route.durationMin) 分钟", systemImage: "clock")
+                    Text("\(route.exhibitOrder.count) 件展品")
+                }
+                .font(.caption).foregroundStyle(.inkTertiary)
             }
-            Text(route.title).font(.body)
-            HStack(spacing: 12) {
-                Label("\(route.durationMin) 分钟", systemImage: "clock")
-                Text("\(route.exhibitOrder.count) 件展品")
-            }
-            .font(.caption).foregroundStyle(.inkTertiary)
+            .padding(16).frame(width: 200, alignment: .leading)
+            .background(.bgCard, in: RoundedRectangle(cornerRadius: .radiusMedium))
+            .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
         }
-        .padding(16).frame(width: 200, alignment: .leading)
-        .background(.bgCard, in: RoundedRectangle(cornerRadius: .radiusMedium))
-        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
+        .buttonStyle(.plain)
     }
 
     private func sectionFloor(floors: [FloorDTO]) -> some View {
@@ -154,3 +161,74 @@ struct ExploreTabView: View {
         }
     }
 }
+
+// MARK: - 路线详情 Sheet
+
+struct RouteDetailSheet: View {
+    let route: RouteDTO
+    let museumName: String
+    @State private var exhibitNames: [Int: String] = [:]
+    @State private var selectedExhibitId: Int?
+    @State private var selectedExhibitName: String = ""
+    @State private var showNarration = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    HStack {
+                        Image(systemName: "star.fill").foregroundStyle(.vermilion)
+                        VStack(alignment: .leading) {
+                            Text(route.title).font(.headline)
+                            Text("\(route.durationMin) 分钟 · \(route.exhibitOrder.count) 件展品")
+                                .font(.caption).foregroundStyle(.inkTertiary)
+                        }
+                    }
+                }
+                Section("路线展品") {
+                    ForEach(Array(route.exhibitOrder.enumerated()), id: \.element) { idx, exhibitId in
+                        Button {
+                            selectedExhibitId = exhibitId
+                            selectedExhibitName = exhibitNames[exhibitId] ?? "展品 #\(exhibitId)"
+                            showNarration = true
+                        } label: {
+                            HStack {
+                                Text("\(idx + 1)")
+                                    .font(.caption).foregroundStyle(.white)
+                                    .frame(width: 28, height: 28)
+                                    .background(.vermilion, in: Circle())
+                                VStack(alignment: .leading) {
+                                    Text(exhibitNames[exhibitId] ?? "展品 #\(exhibitId)")
+                                        .font(.body)
+                                    Text("点击听讲解").font(.caption).foregroundStyle(.inkTertiary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundStyle(.inkTertiary.opacity(0.5))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .navigationTitle(route.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .task { await loadNames() }
+            .sheet(isPresented: $showNarration) {
+                if let eid = selectedExhibitId {
+                    NarrationView(exhibitId: eid, exhibitName: selectedExhibitName)
+                }
+            }
+        }
+
+    }
+
+    private func loadNames() async {
+        // 通过 API 获取展品名（简化：直接用 exhibit_id 调 narrate，name 从 narrate 响应里取不到
+        // 这里用一个简单的方式：遍历 exhibitOrder，逐个调 museum detail 不现实
+        // 实际应加一个 /api/exhibit/{id} 接口；这里先用占位名）
+        for (idx, eid) in route.exhibitOrder.enumerated() {
+            exhibitNames[eid] = "展品 #\(eid)"
+        }
+    }
+}
+
