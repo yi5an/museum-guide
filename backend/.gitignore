@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# 环境
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 数据库
+*.sqlite3
