@@ -1,10 +1,12 @@
 import SwiftUI
+import SwiftData
 
 struct NarrationView: View {
     let exhibitId: Int
     let exhibitName: String
     @State private var vm = NarrationViewModel()
     @State private var showChat = false
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -31,7 +33,23 @@ struct NarrationView: View {
                         .tint(.inkTertiary)
                 }
             }
-            .task { await vm.loadNarration(exhibitId: exhibitId) }
+            .task {
+                await vm.loadNarration(exhibitId: exhibitId)
+                // 讲解成功后保存足迹
+                if let narration = vm.narration {
+                    let visited = VisitedExhibit(
+                        exhibitId: exhibitId,
+                        exhibitName: exhibitName,
+                        museumId: 0,
+                        museumName: "国家博物馆",
+                        tier: narration.tier,
+                        sourceLabel: narration.sourceLabel,
+                        narrationText: narration.content.blocks.compactMap { $0.text }.joined(separator: "\n")
+                    )
+                    modelContext.insert(visited)
+                    try? modelContext.save()
+                }
+            }
             .onDisappear { vm.stopAudio() }
             .sheet(isPresented: $showChat) {
                 ChatView(exhibitId: exhibitId, exhibitName: exhibitName)
