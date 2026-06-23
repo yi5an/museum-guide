@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.db import get_db
 from app.models import Exhibit
 from app.schemas import Candidate, RecognizeRequest, RecognizeResponse

@@ -89,11 +89,14 @@ def test_exhibit_status_pending_review(test_db):
 def test_create_all_models_smoke(test_db):
     """冒烟：所有 8 张表都能实例化并 flush。"""
     m = Museum(name="x", geo_fence=[], city="x", country="x", lat=0.0, lng=0.0)
-    test_db.add(m); test_db.flush()
+    test_db.add(m)
+    test_db.flush()
     f = Floor(museum_id=m.id, level=1, name="F1", sort_order=1)
-    test_db.add(f); test_db.flush()
+    test_db.add(f)
+    test_db.flush()
     e = Exhibit(museum_id=m.id, name="e", status="active", source="official")
-    test_db.add(e); test_db.flush()
+    test_db.add(e)
+    test_db.flush()
     test_db.add(ExhibitImage(exhibit_id=e.id, image_url="http://x/a.jpg", source="official"))
     test_db.add(Narration(exhibit_id=e.id, lang="zh", content={"blocks": []}, tier=1))
     test_db.add(Route(museum_id=m.id, title="r", theme="精选", duration_min=60, exhibit_order=[e.id]))
