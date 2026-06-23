@@ -1,0 +1,149 @@
+[
+  {
+    "name": "故宫博物院",
+    "name_en": "The Palace Museum",
+    "city": "北京",
+    "country": "中国",
+    "lat": 39.9163,
+    "lng": 116.3972,
+    "description": "明清两代皇宫，藏品超 186 万件",
+    "exhibits": [
+      {"name": "清明上河图", "category": "绘画", "dynasty": "北宋", "description": "张择端绘，国宝级画卷，描绘北宋汴京繁华景象"},
+      {"name": "千里江山图", "category": "绘画", "dynasty": "北宋", "description": "王希孟绘，青绿山水巨作"},
+      {"name": "大禹治水玉山", "category": "玉器", "dynasty": "清", "description": "重达 5 吨多的大型玉雕，迄今最大的玉雕作品之一"},
+      {"name": "金瓯永固杯", "category": "金器", "dynasty": "清", "description": "皇帝御用酒杯，象征政权永固"},
+      {"name": "各种釉彩大瓶", "category": "瓷器", "dynasty": "清乾隆", "description": "集 17 种釉彩于一身，又称瓷母"},
+      {"name": "平复帖", "category": "书法", "dynasty": "西晋", "description": "陆机书，现存最早的名家法帖"},
+      {"name": "五牛图", "category": "绘画", "dynasty": "唐", "description": "韩滉作，现存最早的纸本中国画"},
+      {"name": "石鼓", "category": "石刻", "dynasty": "先秦", "description": "先秦石刻文字，被誉为石刻之祖"}
+    ]
+  },
+  {
+    "name": "上海博物馆",
+    "name_en": "Shanghai Museum",
+    "city": "上海",
+    "country": "中国",
+    "lat": 31.2304,
+    "lng": 121.4737,
+    "description": "以青铜器、陶瓷、书画见长",
+    "exhibits": [
+      {"name": "大克鼎", "category": "青铜器", "dynasty": "西周晚期", "description": "晚清海内青铜器三宝之一，内壁铸有长篇铭文"},
+      {"name": "大盂鼎", "category": "青铜器", "dynasty": "西周", "description": "与大克鼎齐名，现藏国博"},
+      {"name": "晋侯稣钟", "category": "青铜器", "dynasty": "西周", "description": "西周编钟，铭文记载历日"},
+      {"name": "怀素苦笋帖", "category": "书法", "dynasty": "唐", "description": "怀素草书精品"},
+      {"name": "淳化阁帖", "category": "书法", "dynasty": "宋", "description": "中国书法史上的法帖鼻祖"}
+    ]
+  },
+  {
+    "name": "陕西历史博物馆",
+    "name_en": "Shaanxi History Museum",
+    "city": "西安",
+    "country": "中国",
+    "lat": 34.2269,
+    "lng": 108.9613,
+    "description": "37 万件馆藏，18 件国宝级文物",
+    "exhibits": [
+      {"name": "鎏金铜蚕", "category": "铜器", "dynasty": "汉", "description": "见证丝绸之路的开通，习近平演讲曾提及"},
+      {"name": "葡萄花鸟纹银香囊", "category": "金银器", "dynasty": "唐", "description": "何家村窖藏出土，内置万向轴承"},
+      {"name": "镶金兽首玛瑙杯", "category": "玉器", "dynasty": "唐", "description": "禁止出境展览国宝"},
+      {"name": "鎏金舞马衔杯纹银壶", "category": "金银器", "dynasty": "唐", "description": "禁止出境展览国宝，再现唐玄宗舞马祝寿"},
+      {"name": "鸳鸯莲瓣纹金碗", "category": "金银器", "dynasty": "唐", "description": "何家村窖藏出土的金器精品"},
+      {"name": "三彩骆驼载伎乐俑", "category": "陶瓷", "dynasty": "唐", "description": "唐三彩代表作"}
+    ]
+  },
+  {
+    "name": "南京博物院",
+    "name_en": "Nanjing Museum",
+    "city": "南京",
+    "country": "中国",
+    "lat": 32.0603,
+    "lng": 118.7969,
+    "description": "2007 年评选出 18 件镇院之宝",
+    "exhibits": [
+      {"name": "银缕玉衣", "category": "玉器", "dynasty": "东汉", "description": "徐州土山汉墓出土，2600 片玉片组成"},
+      {"name": "错银铜牛灯", "category": "青铜器", "dynasty": "西汉", "description": "两千年前的环保黑科技"},
+      {"name": "西汉金兽", "category": "金器", "dynasty": "西汉", "description": "迄今出土最大最重的金器"},
+      {"name": "广陵王玺", "category": "金器", "dynasty": "东汉", "description": "东汉广陵王金印"},
+      {"name": "竹林七贤砖画", "category": "砖画", "dynasty": "南朝", "description": "南朝墓葬砖画代表作"}
+    ]
+  },
+  {
+    "name": "湖南博物院",
+    "name_en": "Hunan Museum",
+    "city": "长沙",
+    "country": "中国",
+    "lat": 28.2049,
+    "lng": 112.9757,
+    "description": "以马王堆汉墓出土文物闻名",
+    "exhibits": [
+      {"name": "素纱襌衣", "category": "丝织品", "dynasty": "西汉", "description": "仅重 48 克，世界最轻最薄古衣"},
+      {"name": "T形帛画", "category": "帛画", "dynasty": "西汉", "description": "辛追墓出土，禁止出境展览国宝"},
+      {"name": "辛追夫人遗体", "category": "遗体", "dynasty": "西汉", "description": "2200 年不腐，世界防腐学奇迹"},
+      {"name": "马王堆帛书", "category": "文献", "dynasty": "西汉", "description": "记载大量先秦典籍"}
+    ]
+  },
+  {
+    "name": "河南博物院",
+    "name_en": "Henan Museum",
+    "city": "郑州",
+    "country": "中国",
+    "lat": 34.7659,
+    "lng": 113.6673,
+    "description": "17 万件馆藏，九大镇院之宝",
+    "exhibits": [
+      {"name": "贾湖骨笛", "category": "骨器", "dynasty": "新石器时代", "description": "距今约 9000 年，世界最早可吹奏乐器"},
+      {"name": "莲鹤方壶", "category": "青铜器", "dynasty": "春秋", "description": "青铜时代的绝唱，镇院之宝"},
+      {"name": "妇好鸮尊", "category": "青铜器", "dynasty": "商", "description": "商代晚期青铜器，造型可爱"},
+      {"name": "武则天金简", "category": "金器", "dynasty": "唐", "description": "中国唯一发现的武则天可移动文物"},
+      {"name": "杜岭方鼎", "category": "青铜器", "dynasty": "商", "description": "商代早期青铜重器"},
+      {"name": "云纹铜禁", "category": "青铜器", "dynasty": "春秋", "description": "失蜡法铸造工艺代表作"}
+    ]
+  },
+  {
+    "name": "浙江省博物馆",
+    "name_en": "Zhejiang Provincial Museum",
+    "city": "杭州",
+    "country": "中国",
+    "lat": 30.2400,
+    "lng": 120.1300,
+    "description": "十大镇馆之宝，良渚文化重镇",
+    "exhibits": [
+      {"name": "富春山居图剩山图", "category": "绘画", "dynasty": "元", "description": "黄公望晚年扛鼎之作，画中之兰亭"},
+      {"name": "良渚玉琮王", "category": "玉器", "dynasty": "新石器时代", "description": "五千年工艺巅峰，禁止出境展览"},
+      {"name": "万工轿", "category": "木器", "dynasty": "民国", "description": "耗费万工时，雕工繁复华丽"},
+      {"name": "彩凤鸣岐七弦琴", "category": "古琴", "dynasty": "唐", "description": "唐琴精品，入选国家宝藏"}
+    ]
+  },
+  {
+    "name": "三星堆博物馆",
+    "name_en": "Sanxingdui Museum",
+    "city": "广汉",
+    "country": "中国",
+    "lat": 30.9914,
+    "lng": 104.2000,
+    "description": "古蜀文明遗址，新馆 2023 年开放",
+    "exhibits": [
+      {"name": "青铜大立人像", "category": "青铜器", "dynasty": "商", "description": "世界铜像之王，禁止出境展览"},
+      {"name": "青铜神树", "category": "青铜器", "dynasty": "商", "description": "高约 3.96 米，世界最早最大单件青铜文物之一"},
+      {"name": "黄金面具", "category": "金器", "dynasty": "商", "description": "2021 年新出土，惊艳世人"},
+      {"name": "纵目面具", "category": "青铜器", "dynasty": "商", "description": "眼球柱状外凸，古蜀信仰象征"},
+      {"name": "黄金权杖", "category": "金器", "dynasty": "商", "description": "禁止出境展览，刻有鱼鸟人头像"}
+    ]
+  },
+  {
+    "name": "湖北省博物馆",
+    "name_en": "Hubei Provincial Museum",
+    "city": "武汉",
+    "country": "中国",
+    "lat": 30.5489,
+    "lng": 114.3631,
+    "description": "26 万件馆藏，荆楚文化核心殿堂",
+    "exhibits": [
+      {"name": "越王勾践剑", "category": "青铜器", "dynasty": "春秋", "description": "天下第一剑，两千年不锈"},
+      {"name": "曾侯乙编钟", "category": "青铜器", "dynasty": "战国早期", "description": "65 件组成，改写世界音乐史"},
+      {"name": "元青花四爱图梅瓶", "category": "瓷器", "dynasty": "元", "description": "陶瓷中的熊猫，存世稀少"},
+      {"name": "曾侯乙尊盘", "category": "青铜器", "dynasty": "战国早期", "description": "失蜡法铸造巅峰"},
+      {"name": "虎座鸟架鼓", "category": "漆器", "dynasty": "战国", "description": "楚文化代表"}
+    ]
+  }
+]
