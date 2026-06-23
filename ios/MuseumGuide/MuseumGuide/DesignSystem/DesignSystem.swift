@@ -1,32 +1,27 @@
 import SwiftUI
 
+// ShapeStyle 扩展：让 .foregroundStyle(.vermilion) / .background(.bgCard) / .fill(.line) 都能用点语法
+extension ShapeStyle where Self == Color {
+    static var bgRice: Color { Color(red: 0.96, green: 0.95, blue: 0.91) }
+    static var bgCard: Color { .white }
+    static var bgElevated: Color { Color(red: 0.98, green: 0.98, blue: 0.97) }
+    static var ink: Color { Color(red: 0.11, green: 0.11, blue: 0.12) }
+    static var inkSecondary: Color { Color(red: 0.24, green: 0.24, blue: 0.27) }
+    static var inkTertiary: Color { Color(red: 0.56, green: 0.56, blue: 0.57) }
+    static var vermilion: Color { Color(red: 0.75, green: 0.22, blue: 0.17) }
+    static var vermilionSoft: Color { Color(red: 0.98, green: 0.92, blue: 0.91) }
+    static var bronze: Color { Color(red: 0.55, green: 0.41, blue: 0.08) }
+    static var bronzeDeep: Color { Color(red: 0.36, green: 0.29, blue: 0.12) }
+    static var bronzeSoft: Color { Color(red: 0.96, green: 0.94, blue: 0.88) }
+    static var jade: Color { Color(red: 0.35, green: 0.49, blue: 0.43) }
+    static var jadeSoft: Color { Color(red: 0.91, green: 0.95, blue: 0.93) }
+    static var line: Color { Color(red: 0.91, green: 0.89, blue: 0.85) }
+    static var success: Color { Color(red: 0.20, green: 0.78, blue: 0.35) }
+}
+
+// Color 扩展：用于 .tint() / Canvas 等需要显式 Color 类型的场景
 extension Color {
-    // 背景层
-    static let bgRice = Color(red: 0.96, green: 0.95, blue: 0.91)
-    static let bgCard = Color.white
-    static let bgElevated = Color(red: 0.98, green: 0.98, blue: 0.97)
-
-    // 文字层
-    static let ink = Color(red: 0.11, green: 0.11, blue: 0.12)
-    static let inkSecondary = Color(red: 0.24, green: 0.24, blue: 0.27)
-    static let inkTertiary = Color(red: 0.56, green: 0.56, blue: 0.57)
-
-    // 主点缀 - 朱砂
-    static let vermilion = Color(red: 0.75, green: 0.22, blue: 0.17)
-    static let vermilionSoft = Color(red: 0.98, green: 0.92, blue: 0.91)
-
-    // 次点缀 - 青铜金
-    static let bronze = Color(red: 0.55, green: 0.41, blue: 0.08)
-    static let bronzeDeep = Color(red: 0.36, green: 0.29, blue: 0.12)
-    static let bronzeSoft = Color(red: 0.96, green: 0.94, blue: 0.88)
-
-    // 完成态 - 玉色
-    static let jade = Color(red: 0.35, green: 0.49, blue: 0.43)
-    static let jadeSoft = Color(red: 0.91, green: 0.95, blue: 0.93)
-
-    // 分隔线 / 状态
-    static let line = Color(red: 0.91, green: 0.89, blue: 0.85)
-    static let success = Color(red: 0.20, green: 0.78, blue: 0.35)
+    static let bgColor = Color(red: 0.96, green: 0.95, blue: 0.91)  // 避免命名冲突，用 bgColor
 }
 
 extension Font {

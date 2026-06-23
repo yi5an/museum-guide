@@ -10,12 +10,24 @@
 		004F069F7E531F135698277F /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A53E8DA2C0B87AF664D9539 /* CameraManager.swift */; };
 		02107D3CD1999FA5E3017686 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0073E15D1599344841ED04B /* Assets.xcassets */; };
 		0299EECA1CBF2065A6CCC71E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0783C0E006EB3A8A9B3EE2A /* Models.swift */; };
+		126003ED97E537216305079C /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEAC2319F77721EB503D5D5 /* ProfileViewModel.swift */; };
+		15C0F4CFAED2BAC45067E2C1 /* MuseumViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7E11E02BFF9414CDC67E85E /* MuseumViewModel.swift */; };
 		196A9713E8EB2E9AE2105825 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0472EEDE61FDF36A0425FB2D /* ContentView.swift */; };
 		19CF045A414F6917825F0540 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706F9F31AB90BF552EB349CF /* DesignSystem.swift */; };
+		1AE6FF22FDF1AEA1FD9630C5 /* MapTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590121D4FC7CE3979FD23268 /* MapTabView.swift */; };
+		1CA8A85729262C9DA75F614F /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907C21D4FA5A3A50E32560D9 /* CameraView.swift */; };
 		452582D659955B9F9D91720B /* MuseumGuideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B80E25A070983660013509 /* MuseumGuideTests.swift */; };
+		5973F2E6BA760DB4523C7460 /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DAF9B333AB57CF5556A02C7 /* MapViewModel.swift */; };
 		5F342B6BF7579FC5548D0D37 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8214F064B98117ACCC504F9 /* APIClient.swift */; };
+		698773627718BB97C59B2A7C /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CDA1C84CEF5ACB50AB55453 /* ChatViewModel.swift */; };
+		76D1FC31CB24B208402F4C92 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E31C41FFE747C15D9BD83A1 /* ProfileView.swift */; };
 		77099E7D2BD53C987FABD585 /* DTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1549B4AD8499B291DF897DEB /* DTOs.swift */; };
+		863FC8C531A6BCBC12057224 /* NarrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30981D475722BF7E4D95160E /* NarrationViewModel.swift */; };
+		922FE86047443C10B200943B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8867E52E53C7AB7080853 /* ChatView.swift */; };
+		C086E63D28984FAA107F39EA /* ExploreTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 462315614905E1189AB77F26 /* ExploreTabView.swift */; };
+		C5AC54CF08FE44DFFF53EC4F /* NarrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6418F75C3E965E5C8B6899CF /* NarrationView.swift */; };
 		DC361336C8613DC64C76A184 /* AudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66611C4E1A364AFB9C85274 /* AudioService.swift */; };
+		E2FE72009E18B17C523CCA8F /* RecognitionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819021020A8720570A7BC05A /* RecognitionViewModel.swift */; };
 		EB3DE3C5F4FE6EF3BE3A3354 /* MuseumGuideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D6ACF756CFFFBBA673AB03 /* MuseumGuideApp.swift */; };
 		F82EE0E6F16274465A94604C /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05520373980700BFD806061 /* LocationManager.swift */; };
 /* End PBXBuildFile section */
@@ -32,16 +44,28 @@
 
 /* Begin PBXFileReference section */
 		0472EEDE61FDF36A0425FB2D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0BEAC2319F77721EB503D5D5 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		1549B4AD8499B291DF897DEB /* DTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DTOs.swift; sourceTree = "<group>"; };
 		2A53E8DA2C0B87AF664D9539 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		30981D475722BF7E4D95160E /* NarrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationViewModel.swift; sourceTree = "<group>"; };
+		3CDA1C84CEF5ACB50AB55453 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		462315614905E1189AB77F26 /* ExploreTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreTabView.swift; sourceTree = "<group>"; };
+		4E31C41FFE747C15D9BD83A1 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		590121D4FC7CE3979FD23268 /* MapTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapTabView.swift; sourceTree = "<group>"; };
+		6418F75C3E965E5C8B6899CF /* NarrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationView.swift; sourceTree = "<group>"; };
+		6AD8867E52E53C7AB7080853 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		706F9F31AB90BF552EB349CF /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		71D6ACF756CFFFBBA673AB03 /* MuseumGuideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumGuideApp.swift; sourceTree = "<group>"; };
+		819021020A8720570A7BC05A /* RecognitionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionViewModel.swift; sourceTree = "<group>"; };
 		86244ACC383DE33E56FD871C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		907C21D4FA5A3A50E32560D9 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		9DAF9B333AB57CF5556A02C7 /* MapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewModel.swift; sourceTree = "<group>"; };
 		A0B80E25A070983660013509 /* MuseumGuideTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumGuideTests.swift; sourceTree = "<group>"; };
 		B05520373980700BFD806061 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		C0073E15D1599344841ED04B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C0783C0E006EB3A8A9B3EE2A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		C66611C4E1A364AFB9C85274 /* AudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioService.swift; sourceTree = "<group>"; };
+		C7E11E02BFF9414CDC67E85E /* MuseumViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumViewModel.swift; sourceTree = "<group>"; };
 		E5FC81519307D29EE47D9FC8 /* MuseumGuide.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MuseumGuide.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8214F064B98117ACCC504F9 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		FE8913D8FF9673CF3194C35F /* MuseumGuideTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MuseumGuideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -91,6 +115,7 @@
 		50FA23EF3A06ACCD6C08C420 /* Explore */ = {
 			isa = PBXGroup;
 			children = (
+				462315614905E1189AB77F26 /* ExploreTabView.swift */,
 			);
 			path = Explore;
 			sourceTree = "<group>";
@@ -98,6 +123,7 @@
 		5D6AB609B0B11D2F393121BF /* Map */ = {
 			isa = PBXGroup;
 			children = (
+				590121D4FC7CE3979FD23268 /* MapTabView.swift */,
 			);
 			path = Map;
 			sourceTree = "<group>";
@@ -105,6 +131,7 @@
 		6C2F2F7CB469FAB2FDD3400F /* Narration */ = {
 			isa = PBXGroup;
 			children = (
+				6418F75C3E965E5C8B6899CF /* NarrationView.swift */,
 			);
 			path = Narration;
 			sourceTree = "<group>";
@@ -112,6 +139,12 @@
 		7931BCA592ABB8057952A6F9 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				3CDA1C84CEF5ACB50AB55453 /* ChatViewModel.swift */,
+				9DAF9B333AB57CF5556A02C7 /* MapViewModel.swift */,
+				C7E11E02BFF9414CDC67E85E /* MuseumViewModel.swift */,
+				30981D475722BF7E4D95160E /* NarrationViewModel.swift */,
+				0BEAC2319F77721EB503D5D5 /* ProfileViewModel.swift */,
+				819021020A8720570A7BC05A /* RecognitionViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -128,6 +161,7 @@
 		8B3B6F869A71F2762C2F1BFB /* Camera */ = {
 			isa = PBXGroup;
 			children = (
+				907C21D4FA5A3A50E32560D9 /* CameraView.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -135,6 +169,7 @@
 		9D3BAD239087C16D40214697 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				4E31C41FFE747C15D9BD83A1 /* ProfileView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -160,6 +195,7 @@
 		C78143BC5EB112259B8A35CA /* Chat */ = {
 			isa = PBXGroup;
 			children = (
+				6AD8867E52E53C7AB7080853 /* ChatView.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -285,12 +321,24 @@
 				5F342B6BF7579FC5548D0D37 /* APIClient.swift in Sources */,
 				DC361336C8613DC64C76A184 /* AudioService.swift in Sources */,
 				004F069F7E531F135698277F /* CameraManager.swift in Sources */,
+				1CA8A85729262C9DA75F614F /* CameraView.swift in Sources */,
+				922FE86047443C10B200943B /* ChatView.swift in Sources */,
+				698773627718BB97C59B2A7C /* ChatViewModel.swift in Sources */,
 				196A9713E8EB2E9AE2105825 /* ContentView.swift in Sources */,
 				77099E7D2BD53C987FABD585 /* DTOs.swift in Sources */,
 				19CF045A414F6917825F0540 /* DesignSystem.swift in Sources */,
+				C086E63D28984FAA107F39EA /* ExploreTabView.swift in Sources */,
 				F82EE0E6F16274465A94604C /* LocationManager.swift in Sources */,
+				1AE6FF22FDF1AEA1FD9630C5 /* MapTabView.swift in Sources */,
+				5973F2E6BA760DB4523C7460 /* MapViewModel.swift in Sources */,
 				0299EECA1CBF2065A6CCC71E /* Models.swift in Sources */,
 				EB3DE3C5F4FE6EF3BE3A3354 /* MuseumGuideApp.swift in Sources */,
+				15C0F4CFAED2BAC45067E2C1 /* MuseumViewModel.swift in Sources */,
+				C5AC54CF08FE44DFFF53EC4F /* NarrationView.swift in Sources */,
+				863FC8C531A6BCBC12057224 /* NarrationViewModel.swift in Sources */,
+				76D1FC31CB24B208402F4C92 /* ProfileView.swift in Sources */,
+				126003ED97E537216305079C /* ProfileViewModel.swift in Sources */,
+				E2FE72009E18B17C523CCA8F /* RecognitionViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

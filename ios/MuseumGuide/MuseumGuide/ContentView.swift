@@ -5,17 +5,17 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Text("探索")
+            ExploreTabView()
                 .tabItem { Label("探索", systemImage: "safari") }
                 .tag(0)
-            Text("地图")
+            MapTabView()
                 .tabItem { Label("地图", systemImage: "map.fill") }
                 .tag(1)
-            Text("我的")
+            ProfileView()
                 .tabItem { Label("我的", systemImage: "person.circle") }
                 .tag(2)
         }
-        .tint(.vermilion)
+        .tint(Color(red: 0.75, green: 0.22, blue: 0.17))
     }
 }
 
