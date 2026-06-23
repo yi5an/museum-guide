@@ -7,13 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		004F069F7E531F135698277F /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A53E8DA2C0B87AF664D9539 /* CameraManager.swift */; };
 		02107D3CD1999FA5E3017686 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0073E15D1599344841ED04B /* Assets.xcassets */; };
 		0299EECA1CBF2065A6CCC71E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0783C0E006EB3A8A9B3EE2A /* Models.swift */; };
 		196A9713E8EB2E9AE2105825 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0472EEDE61FDF36A0425FB2D /* ContentView.swift */; };
 		19CF045A414F6917825F0540 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706F9F31AB90BF552EB349CF /* DesignSystem.swift */; };
 		452582D659955B9F9D91720B /* MuseumGuideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B80E25A070983660013509 /* MuseumGuideTests.swift */; };
+		5F342B6BF7579FC5548D0D37 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8214F064B98117ACCC504F9 /* APIClient.swift */; };
 		77099E7D2BD53C987FABD585 /* DTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1549B4AD8499B291DF897DEB /* DTOs.swift */; };
+		DC361336C8613DC64C76A184 /* AudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66611C4E1A364AFB9C85274 /* AudioService.swift */; };
 		EB3DE3C5F4FE6EF3BE3A3354 /* MuseumGuideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D6ACF756CFFFBBA673AB03 /* MuseumGuideApp.swift */; };
+		F82EE0E6F16274465A94604C /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05520373980700BFD806061 /* LocationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,13 +33,17 @@
 /* Begin PBXFileReference section */
 		0472EEDE61FDF36A0425FB2D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1549B4AD8499B291DF897DEB /* DTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DTOs.swift; sourceTree = "<group>"; };
+		2A53E8DA2C0B87AF664D9539 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
 		706F9F31AB90BF552EB349CF /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		71D6ACF756CFFFBBA673AB03 /* MuseumGuideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumGuideApp.swift; sourceTree = "<group>"; };
 		86244ACC383DE33E56FD871C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A0B80E25A070983660013509 /* MuseumGuideTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumGuideTests.swift; sourceTree = "<group>"; };
+		B05520373980700BFD806061 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		C0073E15D1599344841ED04B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C0783C0E006EB3A8A9B3EE2A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		C66611C4E1A364AFB9C85274 /* AudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioService.swift; sourceTree = "<group>"; };
 		E5FC81519307D29EE47D9FC8 /* MuseumGuide.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MuseumGuide.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E8214F064B98117ACCC504F9 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		FE8913D8FF9673CF3194C35F /* MuseumGuideTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MuseumGuideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -159,6 +167,10 @@
 		D7AF3A444CD8B03DB4922D0E /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E8214F064B98117ACCC504F9 /* APIClient.swift */,
+				C66611C4E1A364AFB9C85274 /* AudioService.swift */,
+				2A53E8DA2C0B87AF664D9539 /* CameraManager.swift */,
+				B05520373980700BFD806061 /* LocationManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -270,9 +282,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5F342B6BF7579FC5548D0D37 /* APIClient.swift in Sources */,
+				DC361336C8613DC64C76A184 /* AudioService.swift in Sources */,
+				004F069F7E531F135698277F /* CameraManager.swift in Sources */,
 				196A9713E8EB2E9AE2105825 /* ContentView.swift in Sources */,
 				77099E7D2BD53C987FABD585 /* DTOs.swift in Sources */,
 				19CF045A414F6917825F0540 /* DesignSystem.swift in Sources */,
+				F82EE0E6F16274465A94604C /* LocationManager.swift in Sources */,
 				0299EECA1CBF2065A6CCC71E /* Models.swift in Sources */,
 				EB3DE3C5F4FE6EF3BE3A3354 /* MuseumGuideApp.swift in Sources */,
 			);
