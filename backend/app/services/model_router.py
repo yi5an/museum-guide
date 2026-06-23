@@ -14,6 +14,65 @@ from openai import AsyncOpenAI
 from app.config import settings
 
 
+def _extract_json(text: str) -> dict | None:
+    """从 LLM 输出中提取 JSON 对象。
+
+    用栈匹配法正确处理嵌套花括号和字符串内的花括号/引号。
+    支持 ```json 包裹、裸 JSON、前后有说明文字。
+    """
+    if not text:
+        return None
+
+    # 1. 先尝试直接解析（最干净的情况）
+    try:
+        result = json.loads(text.strip())
+        if isinstance(result, dict):
+            return result
+    except json.JSONDecodeError:
+        pass
+
+    # 2. 找第一个 '{'，用栈匹配找到对应的 '}'
+    start = text.find("{")
+    if start == -1:
+        return None
+
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if escape:
+            escape = False
+            continue
+        if ch == "\\" and in_string:
+            escape = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                # 找到完整的 JSON 对象
+                try:
+                    result = json.loads(text[start : i + 1])
+                    if isinstance(result, dict):
+                        return result
+                except json.JSONDecodeError:
+                    pass
+                # 继续找下一个 '{'
+                next_start = text.find("{", i + 1)
+                if next_start == -1:
+                    return None
+                # 递归处理剩余文本（避免深递归，改用循环）
+                return _extract_json(text[next_start:])
+    return None
+
+
 class ModelRouter:
     def __init__(self, base_url: str, api_key: str, model: str):
         self.model = model
@@ -50,12 +109,10 @@ class ModelRouter:
                     ],
                 }
             ],
-            response_format={"type": "json_object"},
         )
-        text = resp.choices[0].message.content or "{}"
-        try:
-            parsed = json.loads(text)
-        except json.JSONDecodeError:
+        text = resp.choices[0].message.content or ""
+        parsed = _extract_json(text)
+        if parsed is None:
             parsed = {"name": "未知", "category": "", "dynasty": "", "confidence": 0.0}
         confidence = float(parsed.get("confidence", 0.5))
         name = parsed.get("name", "未知")
@@ -96,13 +153,16 @@ class ModelRouter:
         resp = await self._client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
         )
-        content = resp.choices[0].message.content or "{}"
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            return {"blocks": [{"type": "text", "section": "说明", "text": "讲解生成失败，请稍后重试。"}]}
+        content = resp.choices[0].message.content or ""
+        parsed = _extract_json(content)
+        if parsed is None:
+            return {
+                "blocks": [
+                    {"type": "text", "section": "说明", "text": "讲解生成失败，请稍后重试。"}
+                ]
+            }
+        return parsed
 
     # === 对话追问（文本）===
 
