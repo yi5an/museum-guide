@@ -14,12 +14,37 @@ struct NarrationView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
-                    if let narration = vm.narration {
+
+                    if vm.isLoading {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                            Text("AI 正在生成讲解…").font(.body).foregroundStyle(Color.inkSecondary)
+                            Text("这可能需要几秒钟").font(.caption).foregroundStyle(.inkTertiary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    } else if let narration = vm.narration {
                         playerControl(tier: narration.tier, sourceLabel: narration.sourceLabel)
                         narrationContent(blocks: narration.content.blocks)
-                    }
-                    if vm.isLoading {
-                        ProgressView("AI 生成讲解中…").padding()
+                    } else if let error = vm.errorMessage {
+                        // 错误状态 + 重试
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 40)).foregroundStyle(.inkTertiary)
+                            Text(error).font(.body).foregroundStyle(Color.inkSecondary)
+                                .multilineTextAlignment(.center)
+                            Button {
+                                vm.retry()
+                            } label: {
+                                Label("重试", systemImage: "arrow.clockwise")
+                                    .padding(.horizontal, 24).padding(.vertical, 10)
+                                    .background(Color.vermilion, in: Capsule())
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
                     }
                 }
                 .padding()

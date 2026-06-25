@@ -26,26 +26,28 @@ async def recognize(req: RecognizeRequest, db: Session = Depends(get_db)):
     best_conf = vision_result["best_confidence"]
 
     # 2. 用识别结果匹配同馆展品库（名字精确/模糊匹配）
+    # museum_id 为 None 时跳过库匹配（通用 AI 讲解模式）
     candidates: list[Candidate] = []
     best: Candidate | None = None
 
-    stmt = select(Exhibit).where(
-        Exhibit.museum_id == req.museum_id,
-        Exhibit.status.in_(["active", "moved"]),
-    )
-    for exhibit in db.scalars(stmt):
-        name_match = (
-            exhibit.name == raw_name
-            or raw_name in exhibit.name
-            or exhibit.name in raw_name
+    if req.museum_id is not None:
+        stmt = select(Exhibit).where(
+            Exhibit.museum_id == req.museum_id,
+            Exhibit.status.in_(["active", "moved"]),
         )
-        if name_match:
-            c = Candidate(
-                exhibit_id=exhibit.id, name=exhibit.name, confidence=best_conf
+        for exhibit in db.scalars(stmt):
+            name_match = (
+                exhibit.name == raw_name
+                or raw_name in exhibit.name
+                or exhibit.name in raw_name
             )
-            candidates.append(c)
-            if best is None or c.confidence > best.confidence:
-                best = c
+            if name_match:
+                c = Candidate(
+                    exhibit_id=exhibit.id, name=exhibit.name, confidence=best_conf
+                )
+                candidates.append(c)
+                if best is None or c.confidence > best.confidence:
+                    best = c
 
     # 3. 库里无匹配 → 用 GLM 原始候选
     if not candidates:

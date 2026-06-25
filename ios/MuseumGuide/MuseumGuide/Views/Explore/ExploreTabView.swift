@@ -1,90 +1,237 @@
 import SwiftUI
 
+/// 博物馆建筑图片加载视图。
+/// 使用独立 URLSession + .reloadIgnoringLocalCacheData，避免 AsyncImage 缓存
+/// 旧的失败结果或旧版本图片，确保每次启动都拉取最新图片。
+struct MuseumCoverImage: View {
+    let url: String?
+    var height: CGFloat = 150
+
+    var body: some View {
+        NoCacheAsyncImage(url: url.flatMap { URL(string: $0) }, height: height)
+    }
+}
+
+/// 绕过 URLCache 的轻量异步图片加载器。
+/// 图片用 aspectRatio(.fill) 填满后立即 clipped，确保不会撑破容器或超出裁切。
+private struct NoCacheAsyncImage: View {
+    let url: URL?
+    var height: CGFloat
+    @State private var image: Image?
+    @State private var failed = false
+
+    var body: some View {
+        ZStack {
+            if let image {
+                image
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                placeholder
+            }
+        }
+        // 固定高度 + 裁剪，保证 fill 模式下溢出的部分被切掉
+        .frame(height: height)
+        .frame(maxWidth: .infinity)
+        .clipped()
+        .task(id: url) { if let url { await load(url) } }
+    }
+
+    @ViewBuilder
+    private var placeholder: some View {
+        LinearGradient(colors: [.bronzeDeep, Color.bronze],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
+            .overlay {
+                if failed {
+                    Image(systemName: "building.columns.fill")
+                        .font(.system(size: 40)).opacity(0.2).foregroundStyle(.white)
+                } else {
+                    ProgressView().tint(.white)
+                }
+            }
+    }
+
+    @MainActor
+    private func load(_ url: URL) async {
+        image = nil
+        failed = false
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("MuseumGuide/1.0", forHTTPHeaderField: "User-Agent")
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: request)
+            guard let http = resp as? HTTPURLResponse, http.statusCode == 200,
+                  let uiImage = UIImage(data: data) else {
+                failed = true
+                return
+            }
+            image = Image(uiImage: uiImage)
+        } catch {
+            failed = true
+        }
+    }
+}
+
 struct ExploreTabView: View {
-    @State private var vm = MuseumViewModel()
+    let vm: MuseumViewModel
     @State private var showCamera = false
-    @State private var selectedRoute: RouteDTO?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 if let museum = vm.currentMuseum {
                     museumContent(museum: museum)
-                } else if vm.isLoading {
-                    ProgressView("正在定位博物馆…").padding(.top, 100)
                 } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "building.columns")
-                            .font(.system(size: 50))
-                            .foregroundStyle(.inkTertiary)
-                        Text(vm.errorMessage ?? "点击下方按钮拍照识别展品")
-                            .foregroundStyle(.inkTertiary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
-                        Button("手动选择博物馆") {
-                            vm.loadTestMuseum()
-                        }
-                        .foregroundStyle(.vermilion)
-                    }
-                    .padding(.top, 80)
+                    museumList
                 }
             }
             .background(.bgRice)
             .navigationBarHidden(true)
             .task {
-                if vm.currentMuseum == nil { await vm.loadCurrentMuseum() }
+                if vm.museums.isEmpty { await vm.loadMuseumList() }
             }
-            .refreshable { await vm.loadCurrentMuseum() }
+            .refreshable { await vm.loadMuseumList() }
             .sheet(isPresented: $showCamera) {
                 CameraView(currentMuseumId: vm.currentMuseum?.id)
             }
-            .sheet(item: $selectedRoute) { route in
-                RouteDetailSheet(route: route, museumName: vm.currentMuseum?.name ?? "")
-            }
         }
     }
 
+    // MARK: - 博物馆列表
+    private var museumList: some View {
+        VStack(spacing: 0) {
+            // 顶部标题
+            VStack(alignment: .leading, spacing: 6) {
+                Text("探索博物馆").font(.titleLarge)
+                Text("选择一家支持的博物馆，开启智能参观之旅")
+                    .font(.caption).foregroundStyle(.inkTertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 24).padding(.top, 60).padding(.bottom, 20)
+
+            LazyVStack(spacing: 14) {
+                ForEach(vm.museums) { item in
+                    Button { vm.selectMuseum(id: item.id) } label: {
+                        museumCard(item)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 100)
+        }
+    }
+
+    private func museumCard(_ item: MuseumListItemDTO) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            // 建筑照底图（无缓存加载，确保每次拉最新图片）
+            MuseumCoverImage(url: item.coverImageUrl, height: 150)
+
+            // 渐变遮罩
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.55)],
+                startPoint: .center, endPoint: .bottom)
+            .frame(height: 150)
+
+            // 博物馆信息
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.name).font(.bodyEmphasis).foregroundStyle(.white)
+                if let desc = item.description {
+                    Text(desc).font(.caption).foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(1)
+                }
+                HStack(spacing: 8) {
+                    Label(item.city, systemImage: "location.fill").font(.caption)
+                    Text("·").font(.caption)
+                    Text("\(item.exhibitCount) 件展品").font(.caption)
+                }
+                .foregroundStyle(.white.opacity(0.85))
+            }
+            .padding(16)
+        }
+        .frame(height: 150)
+        .clipShape(RoundedRectangle(cornerRadius: .radiusLarge))
+        .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
+    }
+
+    // MARK: - 博物馆详情
     @ViewBuilder
     private func museumContent(museum: MuseumDetailDTO) -> some View {
-        heroHeader(museum: museum)
-        VStack(alignment: .leading, spacing: 24) {
-            ctaCard
-            if !museum.routes.isEmpty { sectionRoute(routes: museum.routes) }
-            if !museum.floors.isEmpty { sectionFloor(floors: museum.floors) }
+        VStack(alignment: .leading, spacing: 0) {
+            heroHeader(museum: museum)
+            VStack(alignment: .leading, spacing: 24) {
+                ctaCard
+                if !museum.routes.isEmpty { sectionRoute(routes: museum.routes) }
+                if !museum.floors.isEmpty { sectionFloor(floors: museum.floors) }
+                if !vm.exhibits.isEmpty { sectionExhibits }
+            }
+            .padding(.top, 24)
+            .padding(.bottom, 100)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.top, 24)
-        .padding(.bottom, 100)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func heroHeader(museum: MuseumDetailDTO) -> some View {
-        ZStack(alignment: .bottomLeading) {
+        ZStack(alignment: .top) {
+            // 建筑照底图（无缓存加载，自身已处理 fill+clipped）
+            MuseumCoverImage(url: museum.coverImageUrl, height: 280)
+
+            // 渐变遮罩（铺满整个区域）
             LinearGradient(
-                colors: [.bronzeDeep, .bronzeDeep.opacity(0.8), Color(red: 0.16, green: 0.12, blue: 0.05)],
-                startPoint: .topLeading, endPoint: .bottomTrailing)
-            .frame(height: 260)
-            .overlay {
-                Image(systemName: "grid").font(.system(size: 200)).opacity(0.05).foregroundStyle(.white)
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                HStack { Spacer(); Image(systemName: "gearshape").foregroundStyle(.white.opacity(0.8))
-                    .padding(8).background(.white.opacity(0.15), in: Circle()) }
-                HStack(spacing: 4) {
-                    Image(systemName: "location.fill")
-                    Text("已定位 · \(museum.city)")
+                colors: [.black.opacity(0.25), .clear, .black.opacity(0.8)],
+                startPoint: .top, endPoint: .bottom)
+
+            // 内容层：顶部按钮 + 底部信息，用 VStack + Spacer 分隔
+            VStack(alignment: .leading, spacing: 0) {
+                // 顶部返回/相机按钮
+                HStack {
+                    Button { vm.currentMuseum = nil } label: {
+                        Image(systemName: "chevron.left")
+                            .padding(10).background(.black.opacity(0.35), in: Circle())
+                            .foregroundStyle(.white)
+                    }
+                    Spacer()
+                    Button { showCamera = true } label: {
+                        Image(systemName: "camera.fill")
+                            .padding(10).background(.black.opacity(0.35), in: Circle())
+                            .foregroundStyle(.white)
+                    }
                 }
-                .font(.caption).foregroundStyle(.white)
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(.white.opacity(0.15), in: Capsule())
-                Text(museum.name).font(.titleLarge).foregroundStyle(.white)
-                HStack(spacing: 12) {
-                    Text("\(museum.exhibitCount) 件展品")
-                    Text("·").opacity(0.5)
-                    Text(museum.country)
+                Spacer(minLength: 0)
+                // 底部博物馆信息
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "location.fill")
+                        Text(museum.city)
+                    }
+                    .font(.caption).foregroundStyle(.white)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(.white.opacity(0.18), in: Capsule())
+                    Text(museum.name)
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 12) {
+                        Text("\(museum.exhibitCount) 件展品")
+                        Text("·").opacity(0.5)
+                        Text(museum.country)
+                    }
+                    .font(.caption).foregroundStyle(.white.opacity(0.9))
+                    if let desc = museum.description {
+                        Text(desc).font(.caption).foregroundStyle(.white.opacity(0.9))
+                            .lineLimit(2)
+                    }
                 }
-                .font(.caption).foregroundStyle(.white.opacity(0.85))
             }
-            .padding([.horizontal, .bottom], 20).padding(.top, 60)
+            .padding(.horizontal, 20)
+            .padding(.top, 56)
+            .padding(.bottom, 20)
         }
+        .frame(height: 280)
+        .frame(maxWidth: .infinity)
+        .clipped()
     }
 
     private var ctaCard: some View {
@@ -110,6 +257,7 @@ struct ExploreTabView: View {
         .padding(.horizontal, 24)
     }
 
+    // MARK: - 路线
     private func sectionRoute(routes: [RouteDTO]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("推荐参观路线").font(.titleSection).padding(.horizontal, 24)
@@ -122,113 +270,81 @@ struct ExploreTabView: View {
     }
 
     private func routeCard(route: RouteDTO) -> some View {
-        Button { selectedRoute = route } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Image(systemName: "star.fill").foregroundStyle(.vermilion)
-                        .frame(width: 40, height: 40)
-                        .background(.vermilionSoft, in: RoundedRectangle(cornerRadius: 12))
-                    Text(route.theme.uppercased()).font(.caption).foregroundStyle(.vermilion)
-                }
-                Text(route.title).font(.body)
-                HStack(spacing: 12) {
-                    Label("\(route.durationMin) 分钟", systemImage: "clock")
-                    Text("\(route.exhibitOrder.count) 件展品")
-                }
-                .font(.caption).foregroundStyle(.inkTertiary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "star.fill").foregroundStyle(.vermilion)
+                    .frame(width: 40, height: 40)
+                    .background(.vermilionSoft, in: RoundedRectangle(cornerRadius: 12))
+                Text(route.theme.uppercased()).font(.caption).foregroundStyle(.vermilion)
             }
-            .padding(16).frame(width: 200, alignment: .leading)
-            .background(.bgCard, in: RoundedRectangle(cornerRadius: .radiusMedium))
-            .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
+            Text(route.title).font(.body)
+            HStack(spacing: 12) {
+                Label("\(route.durationMin) 分钟", systemImage: "clock")
+                Text("\(route.exhibitOrder.count) 件展品")
+            }
+            .font(.caption).foregroundStyle(.inkTertiary)
         }
-        .buttonStyle(.plain)
+        .padding(16).frame(width: 200, alignment: .leading)
+        .background(.bgCard, in: RoundedRectangle(cornerRadius: .radiusMedium))
+        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
     }
 
+    // MARK: - 楼层
     private func sectionFloor(floors: [FloorDTO]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("选择楼层").font(.titleSection).padding(.horizontal, 24)
-            HStack(spacing: 10) {
-                ForEach(floors) { floor in
-                    VStack(spacing: 3) {
-                        Text("F\(floor.level)").font(.titleMedium)
-                        Text(floor.name).font(.microTag).foregroundStyle(.inkTertiary)
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(.bgCard, in: RoundedRectangle(cornerRadius: .radiusSmall))
-                    .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
-                }
-            }.padding(.horizontal, 24)
-        }
-    }
-}
-
-// MARK: - 路线详情 Sheet
-
-struct RouteDetailSheet: View {
-    let route: RouteDTO
-    let museumName: String
-    @State private var exhibitNames: [Int: String] = [:]
-    @State private var selectedExhibitId: Int?
-    @State private var selectedExhibitName: String = ""
-    @State private var showNarration = false
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    HStack {
-                        Image(systemName: "star.fill").foregroundStyle(.vermilion)
-                        VStack(alignment: .leading) {
-                            Text(route.title).font(.headline)
-                            Text("\(route.durationMin) 分钟 · \(route.exhibitOrder.count) 件展品")
-                                .font(.caption).foregroundStyle(.inkTertiary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(floors) { floor in
+                        Button { vm.switchFloor(floor.id) } label: {
+                            VStack(spacing: 3) {
+                                Text("F\(floor.level)").font(.titleMedium)
+                                Text(floor.name).font(.microTag).foregroundStyle(.inkTertiary)
+                            }
+                            .padding(.horizontal, 18).padding(.vertical, 12)
+                            .background(
+                                vm.selectedFloorId == floor.id ? AnyShapeStyle(.vermilion) : AnyShapeStyle(.bgCard),
+                                in: RoundedRectangle(cornerRadius: .radiusSmall))
+                            .foregroundStyle(vm.selectedFloorId == floor.id ? .white : .inkPrimary)
                         }
                     }
-                }
-                Section("路线展品") {
-                    ForEach(Array(route.exhibitOrder.enumerated()), id: \.element) { idx, exhibitId in
-                        Button {
-                            selectedExhibitId = exhibitId
-                            selectedExhibitName = exhibitNames[exhibitId] ?? "展品 #\(exhibitId)"
-                            showNarration = true
-                        } label: {
-                            HStack {
-                                Text("\(idx + 1)")
-                                    .font(.caption).foregroundStyle(.white)
-                                    .frame(width: 28, height: 28)
-                                    .background(.vermilion, in: Circle())
-                                VStack(alignment: .leading) {
-                                    Text(exhibitNames[exhibitId] ?? "展品 #\(exhibitId)")
-                                        .font(.body)
-                                    Text("点击听讲解").font(.caption).foregroundStyle(.inkTertiary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right").foregroundStyle(.inkTertiary.opacity(0.5))
+                }.padding(.horizontal, 24)
+            }
+        }
+    }
+
+    // MARK: - 展品
+    private var sectionExhibits: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("本层展品 (\(vm.exhibits.count))").font(.titleSection).padding(.horizontal, 24)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(vm.exhibits) { ex in
+                    NavigationLink {
+                        NarrationView(exhibitId: ex.id, exhibitName: ex.name)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ZStack {
+                                LinearGradient(colors: [.bronzeDeep, .bronze],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 28)).opacity(0.2).foregroundStyle(.white)
+                            }
+                            .frame(height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: .radiusSmall))
+                            Text(ex.name).font(.caption).foregroundStyle(.inkPrimary)
+                                .lineLimit(1)
+                            if let dynasty = ex.dynasty {
+                                Text(dynasty).font(.microTag).foregroundStyle(.inkTertiary)
+                                    .lineLimit(1)
                             }
                         }
-                        .buttonStyle(.plain)
+                        .padding(8)
+                        .background(.bgCard, in: RoundedRectangle(cornerRadius: .radiusMedium))
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .navigationTitle(route.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .task { await loadNames() }
-            .sheet(isPresented: $showNarration) {
-                if let eid = selectedExhibitId {
-                    NarrationView(exhibitId: eid, exhibitName: selectedExhibitName)
-                }
-            }
-        }
-
-    }
-
-    private func loadNames() async {
-        // 通过 API 获取展品名（简化：直接用 exhibit_id 调 narrate，name 从 narrate 响应里取不到
-        // 这里用一个简单的方式：遍历 exhibitOrder，逐个调 museum detail 不现实
-        // 实际应加一个 /api/exhibit/{id} 接口；这里先用占位名）
-        for (idx, eid) in route.exhibitOrder.enumerated() {
-            exhibitNames[eid] = "展品 #\(eid)"
+            .padding(.horizontal, 16)
         }
     }
 }
-

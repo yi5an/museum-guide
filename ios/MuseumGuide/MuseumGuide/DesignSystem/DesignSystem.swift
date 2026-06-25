@@ -6,6 +6,7 @@ extension ShapeStyle where Self == Color {
     static var bgCard: Color { .white }
     static var bgElevated: Color { Color(red: 0.98, green: 0.98, blue: 0.97) }
     static var ink: Color { Color(red: 0.11, green: 0.11, blue: 0.12) }
+    static var inkPrimary: Color { Color(red: 0.11, green: 0.11, blue: 0.12) }
     static var inkSecondary: Color { Color(red: 0.24, green: 0.24, blue: 0.27) }
     static var inkTertiary: Color { Color(red: 0.56, green: 0.56, blue: 0.57) }
     static var vermilion: Color { Color(red: 0.75, green: 0.22, blue: 0.17) }

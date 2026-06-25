@@ -3,17 +3,40 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Exhibit, Floor, Museum, Route
+from app.models import Exhibit, Floor, Museum, Narration, Route
 from app.schemas import (
+    ExhibitListResponse,
+    ExhibitOut,
     FloorOut,
     LocateRequest,
     LocateResponse,
     MuseumDetailResponse,
+    MuseumListItem,
+    MuseumListResponse,
     RouteOut,
 )
 from app.services.geo import point_in_fence
 
 router = APIRouter(prefix="/api/museums", tags=["museums"])
+
+
+@router.get("", response_model=MuseumListResponse)
+async def museum_list(db: Session = Depends(get_db)):
+    """所有支持的博物馆列表。"""
+    museums = db.scalars(select(Museum).order_by(Museum.id)).all()
+    items = []
+    for m in museums:
+        count = db.scalar(
+            select(func.count(Exhibit.id)).where(
+                Exhibit.museum_id == m.id, Exhibit.status == "active"
+            )
+        )
+        items.append(MuseumListItem(
+            id=m.id, name=m.name, city=m.city,
+            description=m.description, exhibit_count=count or 0,
+            cover_image_url=m.cover_image_url,
+        ))
+    return MuseumListResponse(total=len(items), museums=items)
 
 
 @router.post("/locate", response_model=LocateResponse)
@@ -50,6 +73,7 @@ async def museum_detail(museum_id: int, db: Session = Depends(get_db)):
         city=museum.city,
         country=museum.country,
         description=museum.description,
+        cover_image_url=museum.cover_image_url,
         floors=[
             FloorOut(
                 id=f.id,
@@ -71,4 +95,44 @@ async def museum_detail(museum_id: int, db: Session = Depends(get_db)):
             for r in routes
         ],
         exhibit_count=active_count or 0,
+    )
+
+
+@router.get("/{museum_id}/exhibits", response_model=ExhibitListResponse)
+async def exhibit_list(
+    museum_id: int,
+    floor_id: int | None = None,
+    limit: int = 200,
+    db: Session = Depends(get_db),
+):
+    """按楼层获取展品列表。floor_id 不传则返回该馆全部。"""
+    stmt = select(Exhibit).where(
+        Exhibit.museum_id == museum_id,
+        Exhibit.status.in_(["active", "moved"]),
+    )
+    if floor_id is not None:
+        stmt = stmt.where(Exhibit.floor_id == floor_id)
+    stmt = stmt.order_by(Exhibit.category, Exhibit.name).limit(limit)
+
+    exhibits_out = []
+    for e in db.scalars(stmt):
+        # 是否有讲解
+        has_n = db.scalar(
+            select(func.count(Narration.id)).where(Narration.exhibit_id == e.id)
+        )
+        exhibits_out.append(ExhibitOut(
+            id=e.id,
+            name=e.name,
+            category=e.category,
+            dynasty=e.dynasty,
+            floor_id=e.floor_id,
+            plan_x=e.plan_x,
+            plan_y=e.plan_y,
+            has_narration=(has_n or 0) > 0,
+        ))
+
+    return ExhibitListResponse(
+        floor_id=floor_id,
+        total=len(exhibits_out),
+        exhibits=exhibits_out,
     )

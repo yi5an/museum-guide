@@ -10,7 +10,7 @@ class LocateRequest(BaseModel):
 
 
 class RecognizeRequest(BaseModel):
-    museum_id: int
+    museum_id: int | None = None
     floor_id: int | None = None
     image: str  # base64 编码
     heading: float | None = None
@@ -54,6 +54,23 @@ class FloorOut(BaseModel):
     sort_order: int
 
 
+class ExhibitOut(BaseModel):
+    id: int
+    name: str
+    category: str | None
+    dynasty: str | None
+    floor_id: int | None
+    plan_x: float | None = None
+    plan_y: float | None = None
+    has_narration: bool
+
+
+class ExhibitListResponse(BaseModel):
+    floor_id: int | None
+    total: int
+    exhibits: list[ExhibitOut]
+
+
 class RouteOut(BaseModel):
     id: int
     title: str
@@ -69,9 +86,24 @@ class MuseumDetailResponse(BaseModel):
     city: str
     country: str
     description: str | None
+    cover_image_url: str | None = None
     floors: list[FloorOut]
     routes: list[RouteOut]
     exhibit_count: int
+
+
+class MuseumListItem(BaseModel):
+    id: int
+    name: str
+    city: str
+    description: str | None
+    exhibit_count: int
+    cover_image_url: str | None = None
+
+
+class MuseumListResponse(BaseModel):
+    total: int
+    museums: list[MuseumListItem]
 
 
 class Candidate(BaseModel):

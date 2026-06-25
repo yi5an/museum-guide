@@ -33,6 +33,9 @@ final class APIClient {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 60
         config.waitsForConnectivity = true
+        // 禁用缓存，确保每次都拉取最新的博物馆列表/展品数据（避免旧 cover_image_url 被缓存）
+        config.urlCache = nil
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
         self.session = URLSession(configuration: config)
     }
 
@@ -42,6 +45,22 @@ final class APIClient {
 
     func museumDetail(id: Int) async throws -> MuseumDetailDTO {
         try await get("/api/museums/\(id)")
+    }
+
+    func museumList() async throws -> MuseumListDTO {
+        try await get("/api/museums")
+    }
+
+    func exhibitList(museumId: Int, floorId: Int?) async throws -> ExhibitListDTO {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        components.path += "/api/museums/\(museumId)/exhibits"
+        if let fid = floorId {
+            components.queryItems = [URLQueryItem(name: "floor_id", value: String(fid))]
+        }
+        guard let url = components.url else { throw APIError.invalidURL }
+        let (data, response) = try await session.data(from: url)
+        try checkResponse(response, data)
+        return try decode(data)
     }
 
     func recognize(museumId: Int, imageBase64: String, heading: Double?) async throws -> RecognizeResponse {

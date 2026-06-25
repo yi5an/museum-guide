@@ -112,6 +112,7 @@ struct MuseumDetailDTO: Codable {
     let city: String
     let country: String
     let description: String?
+    let coverImageUrl: String?
     let floors: [FloorDTO]
     let routes: [RouteDTO]
     let exhibitCount: Int
@@ -119,7 +120,38 @@ struct MuseumDetailDTO: Codable {
     enum CodingKeys: String, CodingKey {
         case id, name, city, country, description, floors, routes
         case nameI18n = "name_i18n"
+        case coverImageUrl = "cover_image_url"
         case exhibitCount = "exhibit_count"
+    }
+}
+
+struct ExhibitListItem: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let category: String?
+    let dynasty: String?
+    let floorId: Int?
+    let planX: Double?
+    let planY: Double?
+    let hasNarration: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, category, dynasty
+        case floorId = "floor_id"
+        case planX = "plan_x"
+        case planY = "plan_y"
+        case hasNarration = "has_narration"
+    }
+}
+
+struct ExhibitListDTO: Codable {
+    let floorId: Int?
+    let total: Int
+    let exhibits: [ExhibitListItem]
+
+    enum CodingKeys: String, CodingKey {
+        case floorId = "floor_id"
+        case total, exhibits
     }
 }
 
@@ -179,4 +211,24 @@ struct ChatResponse: Codable {
 
 struct FeedbackResponse: Codable {
     let ok: Bool
+}
+
+struct MuseumListItemDTO: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let city: String
+    let description: String?
+    let exhibitCount: Int
+    let coverImageUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, city, description
+        case exhibitCount = "exhibit_count"
+        case coverImageUrl = "cover_image_url"
+    }
+}
+
+struct MuseumListDTO: Codable {
+    let total: Int
+    let museums: [MuseumListItemDTO]
 }
