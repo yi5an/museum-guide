@@ -3,6 +3,20 @@
 import asyncio
 from abc import ABC, abstractmethod
 
+import httpx
+
+
+async def async_get(url: str, headers: dict, timeout: int = 10) -> httpx.Response:
+    """同步 httpx.get 的 async 包装，避免在 event loop 里阻塞。
+
+    connector 的 discover/fetch 在 async 上下文里调用，但底层用同步 httpx。
+    用 asyncio.to_thread 把网络阻塞隔离到线程池，防止卡死 uvicorn 主 loop。
+    """
+    return await asyncio.to_thread(httpx.get, url, headers=headers, timeout=timeout)
+
+
+
+
 
 class CollectContext:
     """单次采集运行的共享上下文：限速、重试、取消信号。

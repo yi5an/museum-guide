@@ -7,9 +7,7 @@
 import json
 import urllib.parse
 
-import httpx
-
-from app.collect.base import CollectContext, SourceConnector
+from app.collect.base import CollectContext, SourceConnector, async_get
 
 _HEADERS = {"User-Agent": "MuseumGuide/1.0 (educational project)"}
 
@@ -42,7 +40,7 @@ class BaikeConnector(SourceConnector):
             f"?scope=103&format=json&appid=379020&bk_key={encoded}&bk_length=600"
         )
         try:
-            resp = httpx.get(url, headers=_HEADERS, timeout=10)
+            resp = await async_get(url, _HEADERS, timeout=10)
             if resp.status_code != 200:
                 return None
             data = resp.json()

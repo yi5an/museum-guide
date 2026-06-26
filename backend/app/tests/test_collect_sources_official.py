@@ -24,7 +24,7 @@ _FAKE_HTML = """
 async def test_wiki_list_discovers_museums():
     connector = WikiListConnector()
     ctx = CollectContext()
-    with patch("app.collect.sources.wiki_list.httpx.get", return_value=_Resp(_FAKE_HTML)):
+    with patch("app.collect.base.httpx.get", return_value=_Resp(_FAKE_HTML)):
         items = await connector.discover(ctx)
     names = [i["name"] for i in items]
     assert "中国国家博物馆" in names
@@ -62,7 +62,7 @@ async def test_official_guobo_three_stages():
         # 详情页
         return _Resp(_DETAIL_HTML)
 
-    with patch("app.collect.sources.official_guobo.httpx.get", side_effect=_fake_get):
+    with patch("app.collect.base.httpx.get", side_effect=_fake_get):
         items = await connector.discover(ctx)
         assert len(items) == 2
         assert items[0]["name"] == "后母戊鼎"

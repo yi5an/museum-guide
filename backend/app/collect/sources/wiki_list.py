@@ -7,9 +7,7 @@ target_type=museum。纯规则，不接 LLM。
 import re
 import urllib.parse
 
-import httpx
-
-from app.collect.base import CollectContext, SourceConnector
+from app.collect.base import CollectContext, SourceConnector, async_get
 
 _HEADERS = {"User-Agent": "MuseumGuide/1.0 (educational project)"}
 # 维基"中国的博物馆"分类页
@@ -29,7 +27,7 @@ class WikiListConnector(SourceConnector):
 
     async def discover(self, ctx: CollectContext) -> list[dict]:
         try:
-            resp = httpx.get(_LIST_URL, headers=_HEADERS, timeout=15)
+            resp = await async_get(_LIST_URL, _HEADERS, timeout=15)
             if resp.status_code != 200:
                 return []
             html = resp.text

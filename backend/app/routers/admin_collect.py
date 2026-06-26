@@ -43,7 +43,9 @@ def _job_to_out(job: CollectJob, museum_name: str | None) -> CollectJobOut:
     response_model=CollectStartResponse,
     dependencies=[Depends(_check_token)],
 )
-def start(req: CollectStartRequest):
+async def start(req: CollectStartRequest):
+    # 必须 async：collect_runner.start 内部用 asyncio.create_task，
+    # 需要运行中的 event loop（同步路由在 threadpool 中无 loop）。
     job_id = collect_runner.start(req.museum_id, req.source, req.enable_llm_refine)
     return CollectStartResponse(job_id=job_id)
 

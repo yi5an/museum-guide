@@ -7,9 +7,7 @@
 import json
 import urllib.parse
 
-import httpx
-
-from app.collect.base import CollectContext, SourceConnector
+from app.collect.base import CollectContext, SourceConnector, async_get
 
 _HEADERS = {"User-Agent": "MuseumGuide/1.0 (educational project)"}
 
@@ -38,14 +36,14 @@ class WikiConnector(SourceConnector):
             f"&srsearch={encoded}&format=json&srlimit=1"
         )
         try:
-            sresp = httpx.get(search_url, headers=_HEADERS, timeout=10)
+            sresp = await async_get(search_url, _HEADERS, timeout=10)
             results = sresp.json().get("query", {}).get("search", [])
             if not results:
                 return None
             title = results[0]["title"]
             tenc = urllib.parse.quote(title)
             sum_url = f"https://zh.wikipedia.org/api/rest_v1/page/summary/{tenc}"
-            mresp = httpx.get(sum_url, headers=_HEADERS, timeout=10)
+            mresp = await async_get(sum_url, _HEADERS, timeout=10)
             if mresp.status_code != 200:
                 return None
             return json.dumps({"title": title, "data": mresp.json()}, ensure_ascii=False)

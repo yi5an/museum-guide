@@ -35,7 +35,7 @@ async def test_baike_connector_three_stages():
     assert "source_ref" in items[0]
 
     # fetch + parse：mock httpx
-    with patch("app.collect.sources.baike.httpx.get") as mock_get:
+    with patch("app.collect.base.httpx.get") as mock_get:
         mock_get.return_value = _FakeResponse(_fake_baike_response("司母戊鼎"))
         raw = await connector.fetch(items[0], ctx)
         assert raw is not None
@@ -52,7 +52,7 @@ async def test_baike_connector_not_found():
     items = await connector.discover(ctx, exhibit_names=["不存在的展品"])
     assert len(items) == 1
 
-    with patch("app.collect.sources.baike.httpx.get") as mock_get:
+    with patch("app.collect.base.httpx.get") as mock_get:
         mock_get.return_value = _FakeResponse({"status_code": 200, "json": lambda: {}})
         raw = await connector.fetch(items[0], ctx)
         assert raw is None  # 百科未命中
@@ -79,7 +79,7 @@ async def test_wiki_connector_exhibit():
     assert len(items) == 1
 
     responses = [_FakeWikiSearchResponse(), _FakeWikiSummaryResponse()]
-    with patch("app.collect.sources.wiki.httpx.get", side_effect=responses):
+    with patch("app.collect.base.httpx.get", side_effect=responses):
         raw = await connector.fetch(items[0], ctx)
         assert raw is not None
         fields = await connector.parse(raw, items[0], ctx)

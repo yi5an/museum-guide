@@ -7,9 +7,7 @@
 
 import re
 
-import httpx
-
-from app.collect.base import CollectContext, SourceConnector
+from app.collect.base import CollectContext, SourceConnector, async_get
 from app.collect.llm_extractor import LLMExtractor
 
 BASE = "https://www.chnmuseum.cn/zp/zpml/kgfjp/"
@@ -37,7 +35,7 @@ class OfficialGuoboConnector(SourceConnector):
             page = "" if i == 0 else f"_{i}"
             url = f"{BASE}index{page}.shtml"
             try:
-                resp = httpx.get(url, headers=HEADERS, timeout=15)
+                resp = await async_get(url, HEADERS, timeout=15)
                 if resp.status_code != 200:
                     break
             except Exception:
@@ -65,7 +63,7 @@ class OfficialGuoboConnector(SourceConnector):
 
     async def fetch(self, item: dict, ctx: CollectContext) -> str | None:
         try:
-            resp = httpx.get(item["source_ref"], headers=HEADERS, timeout=15)
+            resp = await async_get(item["source_ref"], HEADERS, timeout=15)
             return resp.text if resp.status_code == 200 else None
         except Exception:
             return None

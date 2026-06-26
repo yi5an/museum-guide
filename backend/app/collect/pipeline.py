@@ -104,23 +104,37 @@ async def run_pipeline(
     db: Session,
     ctx: CollectContext,
     enable_llm_refine: bool = False,
+    job_id: int | None = None,
 ) -> CollectJob:
     """执行完整采集流程，返回完成的 CollectJob。
 
     流程：discover → 逐条(fetch→落盘→parse→upsert→写 item) → 更新 job 状态。
     每条 item 前检查取消信号。
+
+    job_id：若提供，则更新该已存在的 job 记录（供 collect_runner 复用预创建 job）；
+    否则新建一个 job 记录。
     """
-    job = CollectJob(
-        museum_id=museum_id,
-        source=connector.source,
-        stage="running",
-        total=0,
-        done=0,
-        failed=0,
-        log=[],
-    )
-    db.add(job)
-    db.flush()
+    if job_id is not None:
+        job = db.get(CollectJob, job_id)
+        if job is None:
+            job = CollectJob(
+                museum_id=museum_id, source=connector.source, stage="running",
+                total=0, done=0, failed=0, log=[],
+            )
+            db.add(job)
+            db.flush()
+    else:
+        job = CollectJob(
+            museum_id=museum_id,
+            source=connector.source,
+            stage="running",
+            total=0,
+            done=0,
+            failed=0,
+            log=[],
+        )
+        db.add(job)
+        db.flush()
 
     try:
         items_data = await connector.discover(ctx)
