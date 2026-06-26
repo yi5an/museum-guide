@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     recognize_confidence_threshold: float = 0.85
     host: str = "0.0.0.0"
     port: int = 8000
+    admin_token: str = ""  # 采集后台访问 token，空则不校验（仅本地）
 
 
 settings = Settings()

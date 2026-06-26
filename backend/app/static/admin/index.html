@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>博物馆采集后台</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", sans-serif; margin: 0; display: flex; height: 100vh; color: #1f2937; }
+  .sidebar { width: 280px; border-right: 1px solid #e5e7eb; overflow-y: auto; padding: 16px; background: #f9fafb; }
+  .main { flex: 1; padding: 24px; overflow-y: auto; }
+  h2, h3, h4 { margin-top: 0; }
+  .museum-item { padding: 8px 10px; cursor: pointer; border-radius: 6px; font-size: 14px; }
+  .museum-item:hover { background: #f3f4f6; }
+  .museum-item.selected { background: #e0e7ff; }
+  .panel { border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; margin-bottom: 18px; background: #fff; }
+  .progress { height: 22px; background: #f3f4f6; border-radius: 11px; overflow: hidden; margin: 10px 0; }
+  .progress-bar { height: 100%; background: #4f46e5; transition: width .3s; }
+  button { padding: 7px 16px; border: none; background: #4f46e5; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  button:hover { background: #4338ca; }
+  button.secondary { background: #fff; color: #4f46e5; border: 1px solid #4f46e5; }
+  button.secondary:hover { background: #eef2ff; }
+  label { display: inline-block; margin: 4px 8px 4px 0; font-size: 14px; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #f3f4f6; }
+  th { color: #6b7280; font-weight: 600; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .st-succeeded, .st-saved { color: #16a34a; }
+  .st-failed { color: #dc2626; }
+  .st-running, .st-pending { color: #2563eb; }
+  .st-partial { color: #d97706; }
+  .st-canceled { color: #6b7280; }
+  .hist-row { padding: 8px 4px; cursor: pointer; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+  .hist-row:hover { background: #f9fafb; }
+  .muted { color: #9ca3af; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <h3>博物馆</h3>
+  <div id="museums" class="muted">加载中…</div>
+  <button class="secondary" onclick="discoverMuseums()" style="margin-top:14px;width:100%">+ 发现新馆 (wiki_list)</button>
+</div>
+<div class="main">
+  <h2 id="title">采集后台</h2>
+
+  <div class="panel" id="current-task" style="display:none">
+    <h4>当前任务 <span id="task-source" class="muted"></span></h4>
+    <div id="task-info" class="muted">运行中…</div>
+    <div class="progress"><div class="progress-bar" id="pbar" style="width:0%"></div></div>
+    <button class="secondary" onclick="cancelJob()">取消</button>
+  </div>
+
+  <div class="panel">
+    <h4>启动采集</h4>
+    <div id="src-options">
+      <label><input type="radio" name="src" value="wiki"> 维基补元数据</label>
+      <label><input type="radio" name="src" value="baike" checked> 百科展品</label>
+      <label><input type="radio" name="src" value="official"> 官网展品（国博）</label>
+      <label><input type="radio" name="src" value="wiki_list"> 发现新馆</label>
+    </div>
+    <div style="margin-top:8px">
+      <label><input type="checkbox" id="refine"> 启用 LLM 数据整理 (LLM#2)</label>
+    </div>
+    <div style="margin-top:12px">
+      <button onclick="startCollect()">开始采集</button>
+      <span id="start-hint" class="muted" style="margin-left:10px"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h4>历史任务</h4>
+    <div id="history" class="muted">加载中…</div>
+  </div>
+</div>
+
+<script>
+const TOKEN = ""; // 如配置了 admin_token，填这里
+let selectedMuseum = null;
+let currentJobId = null;
+let sse = null;
+
+function headers() { return TOKEN ? { "X-Admin-Token": TOKEN } : {}; }
+function jheaders() { return { "Content-Type": "application/json", ...(TOKEN ? { "X-Admin-Token": TOKEN } : {}) }; }
+
+async function loadMuseums() {
+  try {
+    const r = await fetch("/admin/museums", { headers: headers() });
+    const d = await r.json();
+    const box = document.getElementById("museums");
+    if (!d.museums || d.museums.length === 0) {
+      box.innerHTML = '<span class="muted">暂无博物馆，点下方发现新馆</span>';
+      return;
+    }
+    box.innerHTML = d.museums.map(m =>
+      `<div class="museum-item" onclick="selectMuseum(${m.id}, this)">${m.name} <span class="muted">(${m.exhibit_count})</span></div>`
+    ).join("");
+  } catch (e) {
+    document.getElementById("museums").innerHTML = '<span class="muted">加载失败</span>';
+  }
+}
+
+function selectMuseum(id, el) {
+  selectedMuseum = id;
+  document.querySelectorAll(".museum-item").forEach(e => e.classList.remove("selected"));
+  el.classList.add("selected");
+  const name = el.firstChild.textContent.trim();
+  document.getElementById("title").innerText = "采集 · " + name;
+  document.getElementById("start-hint").innerText = "已选: " + name;
+}
+
+async function discoverMuseums() { await startWith("wiki_list", null); }
+
+async function startCollect() {
+  const src = document.querySelector("input[name=src]:checked").value;
+  if (src !== "wiki_list" && !selectedMuseum) {
+    document.getElementById("start-hint").innerText = "请先在左侧选择一个博物馆";
+    return;
+  }
+  await startWith(src, selectedMuseum);
+}
+
+async function startWith(source, museumId) {
+  const refine = document.getElementById("refine").checked;
+  try {
+    const r = await fetch("/admin/collect/start", {
+      method: "POST", headers: jheaders(),
+      body: JSON.stringify({ museum_id: museumId, source, enable_llm_refine: refine })
+    });
+    const d = await r.json();
+    currentJobId = d.job_id;
+    document.getElementById("task-source").innerText = source + (refine ? " · LLM整理" : "");
+    document.getElementById("current-task").style.display = "block";
+    streamJob(d.job_id);
+  } catch (e) {
+    document.getElementById("start-hint").innerText = "启动失败: " + e;
+  }
+}
+
+function streamJob(jobId) {
+  if (sse) sse.close();
+  sse = new EventSource("/admin/collect/jobs/" + jobId + "/stream");
+  sse.onmessage = (e) => { updateProgress(JSON.parse(e.data)); };
+  sse.addEventListener("done", async (e) => {
+    updateProgress(JSON.parse(e.data));
+    sse.close(); sse = null;
+    await loadHistory(); await loadMuseums();
+    await loadDetail(jobId);
+  });
+  sse.onerror = () => { sse.close(); sse = null; };
+}
+
+function updateProgress(p) {
+  const pct = p.total ? Math.round(p.done / p.total * 100) : 0;
+  document.getElementById("pbar").style.width = pct + "%";
+  document.getElementById("task-info").innerHTML =
+    `<span class="st-${p.stage}">●</span> ${p.done}/${p.total}（${p.failed} 失败） · ${p.stage}`;
+}
+
+async function cancelJob() {
+  if (!currentJobId) return;
+  await fetch("/admin/collect/jobs/" + currentJobId + "/cancel", { method: "POST", headers: headers() });
+  if (sse) { sse.close(); sse = null; }
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch("/admin/collect/jobs?limit=30", { headers: headers() });
+    const d = await r.json();
+    if (!d.jobs || d.jobs.length === 0) {
+      document.getElementById("history").innerHTML = '<span class="muted">暂无历史任务</span>';
+      return;
+    }
+    document.getElementById("history").innerHTML = d.jobs.map(j =>
+      `<div class="hist-row" onclick="loadDetail(${j.id})">
+         <span class="dot" style="background:${dotColor(j.stage)}"></span>
+         <strong>${j.source}</strong> · ${j.museum_name || "发现新馆"} ·
+         ${j.done}/${j.total} ·
+         <span class="st-${j.stage}">${j.stage}</span> ·
+         <span class="muted">${new Date(j.started_at).toLocaleString()}</span>
+       </div>`
+    ).join("");
+  } catch (e) {
+    document.getElementById("history").innerHTML = '<span class="muted">加载失败</span>';
+  }
+}
+
+function dotColor(stage) {
+  return { succeeded: "#16a34a", failed: "#dc2626", running: "#2563eb",
+           partial: "#d97706", canceled: "#9ca3af", pending: "#9ca3af" }[stage] || "#9ca3af";
+}
+
+async function loadDetail(jobId) {
+  try {
+    const r = await fetch("/admin/collect/jobs/" + jobId, { headers: headers() });
+    const d = await r.json();
+    let html = `<div style="margin-bottom:12px"><button class="secondary" onclick="loadHistory()">← 返回列表</button></div>`;
+    html += `<table><tr><th>名称</th><th>状态</th><th>类型</th><th>目标ID</th><th>原因</th></tr>`;
+    for (const it of d.items) {
+      html += `<tr><td>${it.name || "-"}</td>
+        <td class="st-${it.stage}">${it.stage}</td>
+        <td>${it.target_type || "-"}</td>
+        <td>${it.target_id || "-"}</td>
+        <td class="muted">${it.error || ""}</td></tr>`;
+    }
+    html += "</table>";
+    document.getElementById("history").innerHTML = html;
+  } catch (e) {
+    document.getElementById("history").innerHTML = '<span class="muted">加载失败</span>';
+  }
+}
+
+loadMuseums();
+loadHistory();
+</script>
+</body>
+</html>
