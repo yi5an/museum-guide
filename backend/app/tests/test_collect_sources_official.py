@@ -12,26 +12,41 @@ class _Resp:
         self.text = text
 
 
-_FAKE_HTML = """
+_FAKE_CATEGORY_HTML = """
+<html><body>
+<a href="/wiki/北京博物馆列表" title="北京博物馆列表">北京博物馆列表</a>
+<a href="/wiki/上海博物馆列表" title="上海市博物馆列表">上海市博物馆列表</a>
+<a href="/wiki/Category:中国博物馆列表" title="Category:中国博物馆列表">分类</a>
+</body></html>
+"""
+_FAKE_PROV_HTML = """
 <html><body>
 <a href="/wiki/中国国家博物馆" title="中国国家博物馆">中国国家博物馆</a>
 <a href="/wiki/故宫博物院" title="故宫博物院">故宫博物院</a>
 <a href="/wiki/上海博物馆" title="上海博物馆">上海博物馆</a>
 <a href="/wiki/编辑" title="编辑">编辑</a>
+<a href="/wiki/北京博物馆列表" title="北京博物馆列表">列表本身</a>
 </body></html>
 """
 
 
 async def test_wiki_list_discovers_museums():
+    """两步发现：分类页→省份子页→博物馆名。"""
     connector = WikiListConnector()
     ctx = CollectContext()
-    with patch("app.collect.base.httpx.get", return_value=_Resp(_FAKE_HTML)):
+    # 第1次返回分类页（含省份链接），后续返回省份页（含馆名）
+    with patch(
+        "app.collect.base.httpx.get",
+        side_effect=[_Resp(_FAKE_CATEGORY_HTML), _Resp(_FAKE_PROV_HTML), _Resp(_FAKE_PROV_HTML)],
+    ):
         items = await connector.discover(ctx)
     names = [i["name"] for i in items]
     assert "中国国家博物馆" in names
     assert "故宫博物院" in names
-    # 过滤掉导航噪声
+    assert "上海博物馆" in names
+    # 过滤掉导航噪声和列表本身
     assert "编辑" not in names
+    assert "北京博物馆列表" not in names
     assert all("source_ref" in i for i in items)
 
 
