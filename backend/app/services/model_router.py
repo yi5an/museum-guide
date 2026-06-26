@@ -196,6 +196,23 @@ class ModelRouter:
         )
         return resp.choices[0].message.content or ""
 
+    # === 结构化输出（采集 LLM#1/#2 用）===
+
+    async def generate_structured(self, prompt: str, schema_hint: str) -> dict[str, Any]:
+        """让 LLM 按指定 JSON schema 返回结构化结果。
+
+        供采集 LLM#1 提取器等需要确定性 JSON 输出的场景使用。
+        解析失败返回空 dict。
+        """
+        full = f"{prompt}\n\n严格按此 JSON 结构返回（不要其他文字）：\n{schema_hint}"
+        resp = await self._client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": full}],
+        )
+        text = resp.choices[0].message.content or ""
+        parsed = _extract_json(text)
+        return parsed if isinstance(parsed, dict) else {}
+
 
 # 全局单例
 model_router = ModelRouter(
