@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -22,6 +22,10 @@ class Museum(Base):
     cover_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    # 采集系统预留：来源、内容指纹、采集时间（增量比对用，老数据为 NULL）
+    source_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     floors: Mapped[list["Floor"]] = relationship(back_populates="museum")
     exhibits: Mapped[list["Exhibit"]] = relationship(back_populates="museum")
@@ -60,6 +64,10 @@ class Exhibit(Base):
     confidence: Mapped[float] = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    # 采集系统预留：来源、内容指纹、采集时间（增量比对用，老数据为 NULL）
+    source_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     museum: Mapped["Museum"] = relationship(back_populates="exhibits")
     floor: Mapped["Floor | None"] = relationship(back_populates="exhibits")
@@ -76,6 +84,10 @@ class ExhibitImage(Base):
     source: Mapped[str] = mapped_column(String(30), default="official")
     is_primary: Mapped[bool] = mapped_column(default=False)
     # embedding 字段第一版不启用 pgvector，预留位置。
+    # 采集系统预留：来源、内容指纹、采集时间（增量比对用，老数据为 NULL）
+    source_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     exhibit: Mapped["Exhibit"] = relationship(back_populates="images")
 
@@ -91,6 +103,10 @@ class Narration(Base):
     source_label: Mapped[str] = mapped_column(String(100), default="官方")
     source_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
     audio_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # 采集系统预留：来源、内容指纹、采集时间（增量比对用，老数据为 NULL）
+    source_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     exhibit: Mapped["Exhibit"] = relationship(back_populates="narrations")
@@ -133,3 +149,44 @@ class ChatSession(Base):
     lang: Mapped[str] = mapped_column(String(10))
     messages: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+
+class CollectJob(Base):
+    """采集任务：一次「某博物馆 + 某来源」的采集运行。进度页核心数据源。"""
+
+    __tablename__ = "collect_jobs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    museum_id: Mapped[int | None] = mapped_column(ForeignKey("museums.id"), nullable=True)
+    source: Mapped[str] = mapped_column(String(30))  # wiki_list / wiki / baike / official / images
+    stage: Mapped[str] = mapped_column(String(30), default="running")  # running/succeeded/failed/partial/canceled
+    total: Mapped[int] = mapped_column(Integer, default=0)
+    done: Mapped[int] = mapped_column(Integer, default=0)
+    failed: Mapped[int] = mapped_column(Integer, default=0)
+    log: Mapped[list] = mapped_column(JSON, default=list)  # 最近 N 条错误/跳过
+    started_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    museum: Mapped["Museum | None"] = relationship()
+    items: Mapped[list["CollectItem"]] = relationship(back_populates="job")
+
+
+class CollectItem(Base):
+    """采集明细：任务内逐条采集对象的状态记录。"""
+
+    __tablename__ = "collect_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey("collect_jobs.id"))
+    source_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)  # 来源页 URL
+    name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    stage: Mapped[str] = mapped_column(String(30), default="pending")  # pending/fetched/parsed/saved/skipped/failed
+    target_type: Mapped[str | None] = mapped_column(String(30), nullable=True)  # museum/exhibit/image
+    target_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    job: Mapped["CollectJob"] = relationship(back_populates="items")
+

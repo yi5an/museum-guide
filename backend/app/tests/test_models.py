@@ -1,5 +1,7 @@
 from app.models import (
     ChatSession,
+    CollectItem,
+    CollectJob,
     Exhibit,
     ExhibitImage,
     Feedback,
@@ -105,3 +107,71 @@ def test_create_all_models_smoke(test_db):
     test_db.flush()
     # 触发 import 防 lint
     assert ChatSession and Feedback and ExhibitImage and Route
+
+
+def test_exhibit_source_ref_fields(test_db):
+    """采集系统预留字段：source_ref / content_hash / fetched_at 可写入可读取。"""
+    from datetime import datetime
+
+    m = Museum(name="x", geo_fence=[], city="x", country="x", lat=0.0, lng=0.0)
+    test_db.add(m)
+    test_db.flush()
+    e = Exhibit(
+        museum_id=m.id, name="e", status="active", source="official",
+        source_ref="https://example.com/exhibit/1",
+        content_hash="sha256:abc",
+        fetched_at=datetime(2026, 6, 26, 12, 0, 0),
+    )
+    test_db.add(e)
+    test_db.flush()
+    assert e.source_ref == "https://example.com/exhibit/1"
+    assert e.content_hash == "sha256:abc"
+    assert e.fetched_at.year == 2026
+
+
+def test_create_collect_job(test_db):
+    """采集任务可实例化并 flush，默认值正确。"""
+    m = Museum(name="x", geo_fence=[], city="x", country="x", lat=0.0, lng=0.0)
+    test_db.add(m)
+    test_db.flush()
+
+    job = CollectJob(
+        museum_id=m.id,
+        source="baike",
+        stage="running",
+        total=100,
+        done=0,
+        failed=0,
+        log=[],
+    )
+    test_db.add(job)
+    test_db.flush()
+
+    assert job.id is not None
+    assert job.stage == "running"
+    assert job.started_at is not None
+    assert job.finished_at is None
+
+
+def test_create_collect_item(test_db):
+    """采集明细可写入，关联 job，默认 stage=pending。"""
+    m = Museum(name="x", geo_fence=[], city="x", country="x", lat=0.0, lng=0.0)
+    test_db.add(m)
+    test_db.flush()
+    job = CollectJob(museum_id=m.id, source="baike", stage="running", total=1, done=0, failed=0, log=[])
+    test_db.add(job)
+    test_db.flush()
+
+    item = CollectItem(
+        job_id=job.id,
+        source_ref="https://baike.baidu.com/item/test",
+        name="司母戊鼎",
+        target_type="exhibit",
+    )
+    test_db.add(item)
+    test_db.flush()
+
+    assert item.id is not None
+    assert item.stage == "pending"
+    assert item.job.source == "baike"
+    assert item.target_id is None
