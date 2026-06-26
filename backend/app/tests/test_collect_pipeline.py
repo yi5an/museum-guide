@@ -114,3 +114,74 @@ async def test_run_pipeline_inserts_museum(test_db):
     museums = list(test_db.scalars(select(Museum).where(
         Museum.name.in_(["新发现的博物馆A", "中国国家博物馆"]))))
     assert len(museums) == 2
+
+
+async def test_run_pipeline_with_llm_refine(test_db, monkeypatch):
+    """enable_llm_refine=True 时，refiner 被调用且 content_hash 被写入。"""
+    from app.collect.refiner import LLMRefiner
+
+    class _FakeRefineConnector(SourceConnector):
+        source = "fake_refine"
+        default_confidence = 0.5
+        target_type = "exhibit"
+
+        async def discover(self, ctx):
+            return [{"name": "测试鼎", "source_ref": "http://x/1"}]
+
+        async def fetch(self, item, ctx):
+            return "<html>x</html>"
+
+        async def parse(self, raw, item, ctx):
+            return {"name": item["name"], "category": None, "dynasty": "商朝",
+                    "description": "测试描述文本，长度足够触发 refine。"}
+
+    # mock refiner，使其确定性地改写 dynasty
+    async def _fake_refine(self, fields, enable=True):
+        fields["dynasty"] = "商代"
+        return fields
+
+    monkeypatch.setattr(LLMRefiner, "refine", _fake_refine)
+
+    m = _setup_museum(test_db)
+    ctx = CollectContext()
+    job = await run_pipeline(
+        _FakeRefineConnector(), m.id, test_db, ctx, enable_llm_refine=True
+    )
+
+    assert job.stage == "succeeded"
+    exhibit = test_db.scalar(select(Exhibit).where(Exhibit.museum_id == m.id))
+    assert exhibit.content_hash is not None  # 整理后已算 hash
+    assert exhibit.dynasty == "商代"  # refiner 生效
+
+
+async def test_run_pipeline_without_llm_refine_skips_refiner(test_db, monkeypatch):
+    """enable_llm_refine=False 时 refiner 不被调用。"""
+    from app.collect.refiner import LLMRefiner
+
+    called = {"n": 0}
+
+    async def _spy_refine(self, fields, enable=True):
+        called["n"] += 1
+        return fields
+
+    monkeypatch.setattr(LLMRefiner, "refine", _spy_refine)
+
+    class _FakeNoRefineConnector(SourceConnector):
+        source = "fake_norefine"
+        default_confidence = 0.5
+        target_type = "exhibit"
+
+        async def discover(self, ctx):
+            return [{"name": "测试尊", "source_ref": "http://x/2"}]
+
+        async def fetch(self, item, ctx):
+            return "<html>x</html>"
+
+        async def parse(self, raw, item, ctx):
+            return {"name": item["name"], "category": None, "dynasty": None,
+                    "description": "描述"}
+
+    m = _setup_museum(test_db)
+    ctx = CollectContext()
+    await run_pipeline(_FakeNoRefineConnector(), m.id, test_db, ctx, enable_llm_refine=False)
+    assert called["n"] == 0  # refiner 未被调用

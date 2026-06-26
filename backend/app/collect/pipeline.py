@@ -1,5 +1,7 @@
 """统一采集 pipeline：编排 discover → fetch → parse → upsert，记录 collect_jobs/items。"""
 
+import hashlib
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -7,9 +9,22 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.collect.base import CollectContext, SourceConnector
+from app.collect.refiner import LLMRefiner
 from app.models import CollectItem, CollectJob, Exhibit, Museum
 
 RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+
+
+def _compute_hash(fields: dict) -> str:
+    """对整理后的关键字段算 sha256，作为增量比对指纹。"""
+    payload = {
+        "name": fields.get("name"),
+        "category": fields.get("category"),
+        "dynasty": fields.get("dynasty"),
+        "description": fields.get("description"),
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    return "sha256:" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
 
 
 def _raw_path(source: str, museum_id: int, name: str) -> Path:
@@ -31,6 +46,7 @@ def _upsert_exhibit(
         existing.source = connector.source
         existing.confidence = connector.default_confidence
         existing.source_ref = fields.get("source_ref")
+        existing.content_hash = fields.get("content_hash")
         existing.fetched_at = datetime.utcnow()
         return existing, False
 
@@ -44,6 +60,7 @@ def _upsert_exhibit(
         source=connector.source,
         confidence=connector.default_confidence,
         source_ref=fields.get("source_ref"),
+        content_hash=fields.get("content_hash"),
         fetched_at=datetime.utcnow(),
     )
     db.add(exhibit)
@@ -86,6 +103,7 @@ async def run_pipeline(
     museum_id: int | None,
     db: Session,
     ctx: CollectContext,
+    enable_llm_refine: bool = False,
 ) -> CollectJob:
     """执行完整采集流程，返回完成的 CollectJob。
 
@@ -151,6 +169,13 @@ async def run_pipeline(
                 raise RuntimeError("parse 返回空")
             fields.setdefault("source_ref", raw_item.get("source_ref"))
             item.stage = "parsed"
+
+            # 3.5 LLM#2 数据整理（可选开关）
+            if enable_llm_refine:
+                fields = await LLMRefiner().refine(fields, enable=True)
+
+            # 计算 content_hash（整理后的干净数据）
+            fields["content_hash"] = _compute_hash(fields)
 
             # 4. upsert（按 target_type 分发）
             if connector.target_type == "exhibit":
