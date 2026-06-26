@@ -54,7 +54,7 @@
     <div id="src-options">
       <label><input type="radio" name="src" value="wiki"> 维基补元数据</label>
       <label><input type="radio" name="src" value="baike" checked> 百科展品</label>
-      <label><input type="radio" name="src" value="official"> 官网展品（国博）</label>
+      <label><input type="radio" name="src" value="official"> 官网展品<span class="official-hint muted" style="font-size:11px"></span></label>
       <label><input type="radio" name="src" value="wiki_list"> 发现新馆</label>
     </div>
     <div style="margin-top:8px">
@@ -77,6 +77,7 @@ const TOKEN = ""; // 如配置了 admin_token，填这里
 let selectedMuseum = null;
 let currentJobId = null;
 let sse = null;
+let museumsData = [];
 
 function headers() { return TOKEN ? { "X-Admin-Token": TOKEN } : {}; }
 function jheaders() { return { "Content-Type": "application/json", ...(TOKEN ? { "X-Admin-Token": TOKEN } : {}) }; }
@@ -85,13 +86,14 @@ async function loadMuseums() {
   try {
     const r = await fetch("/admin/museums", { headers: headers() });
     const d = await r.json();
+    museumsData = d.museums || [];
     const box = document.getElementById("museums");
-    if (!d.museums || d.museums.length === 0) {
+    if (museumsData.length === 0) {
       box.innerHTML = '<span class="muted">暂无博物馆，点下方发现新馆</span>';
       return;
     }
-    box.innerHTML = d.museums.map(m =>
-      `<div class="museum-item" onclick="selectMuseum(${m.id}, this)">${m.name} <span class="muted">(${m.exhibit_count})</span></div>`
+    box.innerHTML = museumsData.map(m =>
+      `<div class="museum-item" onclick="selectMuseum(${m.id}, this)">${m.name} <span class="muted">(${m.exhibit_count})</span>${m.has_official ? ' <span style="color:#16a34a;font-size:11px">官网✓</span>' : ''}</div>`
     ).join("");
   } catch (e) {
     document.getElementById("museums").innerHTML = '<span class="muted">加载失败</span>';
@@ -104,6 +106,20 @@ function selectMuseum(id, el) {
   el.classList.add("selected");
   const name = el.firstChild.textContent.trim();
   document.getElementById("title").innerText = "采集 · " + name;
+  // 根据该馆是否接入官网，启用/禁用官网选项
+  const m = museumsData.find(x => x.id === id);
+  const officialRadio = document.querySelector('input[name="src"][value="official"]');
+  if (officialRadio) {
+    const ok = m && m.has_official;
+    officialRadio.disabled = !ok;
+    const label = officialRadio.closest("label");
+    if (label) label.style.color = ok ? "" : "#9ca3af";
+    const officialLabel = label ? label.querySelector(".official-hint") : null;
+    if (officialLabel) officialLabel.innerText = ok ? "" : "（该馆未接入）";
+    if (!ok && officialRadio.checked) {
+      document.querySelector('input[name="src"][value="baike"]').checked = true;
+    }
+  }
   document.getElementById("start-hint").innerText = "已选: " + name;
 }
 

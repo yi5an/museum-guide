@@ -37,32 +37,39 @@ async def _run(museum_id: int, source: str, refine: bool = False):
         if not museum:
             print(f"✗ museum_id={museum_id} 不存在")
             return
-        connector = get_connector(source)
-        names = _load_exhibit_names(db, museum_id)
-        if not names:
-            print(f"✗ {museum.name} 无展品名可采集")
-            return
-
-        # 百科/维基的 discover 需要展品名，用闭包注入预发现的 items
+        connector = get_connector(source, museum_id=museum_id)
         ctx = CollectContext()
-        items = await connector.discover(ctx, exhibit_names=names)
-        print(f"=== {museum.name} · source={source} · {len(items)} 条 · refine={refine} ===")
 
-        class _BoundConnector(SourceConnector):
-            source = connector.source
-            default_confidence = connector.default_confidence
-            target_type = connector.target_type
+        if source == "official":
+            # 官网源：connector 自带 discover（抓目录页），无需展品名种子
+            job = await run_pipeline(
+                connector, museum_id, db, ctx, enable_llm_refine=refine
+            )
+        else:
+            # 百科/维基：需展品名种子，用闭包注入预发现的 items
+            names = _load_exhibit_names(db, museum_id)
+            if not names:
+                print(f"✗ {museum.name} 无展品名可采集")
+                return
+            items = await connector.discover(ctx, exhibit_names=names)
+            print(f"=== {museum.name} · source={source} · {len(items)} 条 · refine={refine} ===")
 
-            async def discover(self, ctx):
-                return items
+            class _BoundConnector(SourceConnector):
+                source = connector.source
+                default_confidence = connector.default_confidence
+                target_type = connector.target_type
 
-            async def fetch(self, item, ctx):
-                return await connector.fetch(item, ctx)
+                async def discover(self, ctx):
+                    return items
 
-            async def parse(self, raw, item, ctx):
-                return await connector.parse(raw, item, ctx)
+                async def fetch(self, item, ctx):
+                    return await connector.fetch(item, ctx)
 
-        job = await run_pipeline(_BoundConnector(), museum_id, db, ctx, enable_llm_refine=refine)
+                async def parse(self, raw, item, ctx):
+                    return await connector.parse(raw, item, ctx)
+
+            job = await run_pipeline(_BoundConnector(), museum_id, db, ctx, enable_llm_refine=refine)
+
         print(
             f"\n=== 完成 ===\n"
             f"  stage={job.stage}\n"

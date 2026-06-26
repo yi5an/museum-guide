@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 from app.collect.base import CollectContext
 from app.collect.sources.official_guobo import OfficialGuoboConnector
+from app.collect.sources.official_henan import OfficialHenanConnector
 from app.collect.sources.wiki_list import WikiListConnector
 
 
@@ -81,3 +82,78 @@ async def test_official_guobo_three_stages():
     fields = await connector.parse(_DETAIL_HTML, items[0], ctx)
     assert fields["name"] == "后母戊鼎"
     assert fields["dynasty"] == "商代"
+
+
+# === 河南博物院官网 connector（验证基类可复用）===
+
+_HENAN_INDEX_HTML = """
+<html><body>
+<div class="list-item">
+  <a href="//www.chnmus.net/content/redirect?id=111">
+    <div class="cp-title">贾湖骨笛</div>
+  </a>
+</div>
+<div class="list-item">
+  <a href="//www.chnmus.net/content/redirect?id=222">
+    <div class="cp-title">莲鹤方壶</div>
+  </a>
+</div>
+</body></html>
+"""
+_HENAN_DETAIL_HTML = "<html><body>贾湖骨笛 距今约8000年 骨笛...</body></html>"
+
+
+async def test_official_henan_three_stages():
+    """河南博物院 connector：验证 OfficialConnector 基类可复用于不同结构官网。"""
+    connector = OfficialHenanConnector()
+    ctx = CollectContext()
+
+    def _fake_get(url, **kwargs):
+        if "boutique" in url:
+            return _Resp(_HENAN_INDEX_HTML)
+        # 详情页
+        return _Resp(_HENAN_DETAIL_HTML)
+
+    with patch("app.collect.base.httpx.get", side_effect=_fake_get):
+        items = await connector.discover(ctx)
+        assert len(items) == 2
+        assert items[0]["name"] == "贾湖骨笛"
+        # 协议相对链接(//开头)应被补全为 https://
+        assert items[0]["source_ref"].startswith("https://www.chnmus.net")
+
+        raw = await connector.fetch(items[0], ctx)
+        assert raw == _HENAN_DETAIL_HTML
+
+    fake_llm = AsyncMock()
+    fake_llm.extract_exhibit = AsyncMock(return_value={
+        "name": "贾湖骨笛", "dynasty": "新石器", "category": "骨器",
+        "description": "中国最早的乐器", "source_ref": items[0]["source_ref"],
+    })
+    connector._llm = fake_llm
+    fields = await connector.parse(_HENAN_DETAIL_HTML, items[0], ctx)
+    assert fields["name"] == "贾湖骨笛"
+
+
+async def test_registry_official_per_museum():
+    """registry 按 museum_id 返回对应官网 connector。"""
+    from app.collect.registry import get_connector, has_official
+
+    # 国博(id=1) -> OfficialGuoboConnector
+    c1 = get_connector("official", museum_id=1)
+    assert c1.museum_name == "中国国家博物馆"
+
+    # 河南(id=7) -> OfficialHenanConnector
+    c7 = get_connector("official", museum_id=7)
+    assert c7.museum_name == "河南博物院"
+
+    assert has_official(1) is True
+    assert has_official(7) is True
+    assert has_official(3) is False  # 上海博物馆未接入官网
+
+    # 未接入的馆应抛错
+    try:
+        get_connector("official", museum_id=3)
+        assert False, "应抛 ValueError"
+    except ValueError:
+        pass
+

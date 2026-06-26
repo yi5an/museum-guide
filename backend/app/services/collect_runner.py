@@ -85,7 +85,7 @@ class CollectRunner:
         """实际执行（后台协程）。每步用独立 session。"""
         db = SessionLocal()
         try:
-            connector = get_connector(source)
+            connector = get_connector(source, museum_id=museum_id)
             # 对百科/维基：从该馆现有展品名取种子；对官网/发现源：connector 自带 discover
             items = await self._discover_with_seeds(connector, museum_id, ctx, db)
 

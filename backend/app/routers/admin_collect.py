@@ -44,9 +44,18 @@ def _job_to_out(job: CollectJob, museum_name: str | None) -> CollectJobOut:
     dependencies=[Depends(_check_token)],
 )
 async def start(req: CollectStartRequest):
-    # 必须 async：collect_runner.start 内部用 asyncio.create_task，
-    # 需要运行中的 event loop（同步路由在 threadpool 中无 loop）。
-    job_id = collect_runner.start(req.museum_id, req.source, req.enable_llm_refine)
+    # 必须 async：collect_runner.start 内部用线程，但仍保持 async 语义。
+    # 校验官网源：该馆是否已接入
+    if req.source == "official":
+        from app.collect.registry import has_official
+        if req.museum_id is None or not has_official(req.museum_id):
+            raise HTTPException(
+                400, f"博物馆 id={req.museum_id} 暂未接入官网采集"
+            )
+    try:
+        job_id = collect_runner.start(req.museum_id, req.source, req.enable_llm_refine)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     return CollectStartResponse(job_id=job_id)
 
 
@@ -139,6 +148,8 @@ async def stream(job_id: int, db: Session = Depends(get_db)):
 
 @router.get("/museums", dependencies=[Depends(_check_token)])
 def admin_museums(db: Session = Depends(get_db)):
+    from app.collect.registry import has_official
+
     museums = list(db.scalars(select(Museum).order_by(Museum.id)))
     result = []
     for m in museums:
@@ -148,6 +159,10 @@ def admin_museums(db: Session = Depends(get_db)):
             )
         )
         result.append(
-            {"id": m.id, "name": m.name, "city": m.city, "exhibit_count": c or 0}
+            {
+                "id": m.id, "name": m.name, "city": m.city,
+                "exhibit_count": c or 0,
+                "has_official": has_official(m.id),  # 该馆是否已接入官网采集
+            }
         )
     return {"total": len(result), "museums": result}

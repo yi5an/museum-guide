@@ -11,8 +11,11 @@ async def async_get(url: str, headers: dict, timeout: int = 10) -> httpx.Respons
 
     connector 的 discover/fetch 在 async 上下文里调用，但底层用同步 httpx。
     用 asyncio.to_thread 把网络阻塞隔离到线程池，防止卡死 uvicorn 主 loop。
+    默认跟随重定向（不少官网详情页是 302 跳转）。
     """
-    return await asyncio.to_thread(httpx.get, url, headers=headers, timeout=timeout)
+    return await asyncio.to_thread(
+        httpx.get, url, headers=headers, timeout=timeout, follow_redirects=True
+    )
 
 
 
