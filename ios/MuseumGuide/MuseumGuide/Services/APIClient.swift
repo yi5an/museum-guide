@@ -20,7 +20,8 @@ final class APIClient {
     static let shared = APIClient()
 
     #if DEBUG
-    private let baseURL = URL(string: "http://localhost:8000")!
+    // 注意：iOS 模拟器的 localhost 指向模拟器自身，访问宿主 Mac 需用 Mac 的局域网 IP。
+    private let baseURL = URL(string: "http://172.16.31.157:8000")!
     #else
     private let baseURL = URL(string: "https://api.museumguide.app")!
     #endif

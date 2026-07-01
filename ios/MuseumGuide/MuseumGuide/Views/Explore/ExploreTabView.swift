@@ -1,74 +1,42 @@
+import Kingfisher
 import SwiftUI
 
-/// 博物馆建筑图片加载视图。
-/// 使用独立 URLSession + .reloadIgnoringLocalCacheData，避免 AsyncImage 缓存
-/// 旧的失败结果或旧版本图片，确保每次启动都拉取最新图片。
+/// 博物馆建筑图片加载视图（带缓存）。
+///
+/// 使用 Kingfisher 提供两级缓存（内存 LRU + 磁盘）：
+/// - 列表滚动不重复下载，无闪烁
+/// - 离线仍可显示已缓存图片
+/// 用 GeometryReader 取容器实际宽度，图片 fill 后按该宽度裁剪，
+/// 防止 scaledToFill 溢出撑大布局（否则会撑破屏幕宽度）。
 struct MuseumCoverImage: View {
     let url: String?
     var height: CGFloat = 150
 
     var body: some View {
-        NoCacheAsyncImage(url: url.flatMap { URL(string: $0) }, height: height)
-    }
-}
-
-/// 绕过 URLCache 的轻量异步图片加载器。
-/// 图片用 aspectRatio(.fill) 填满后立即 clipped，确保不会撑破容器或超出裁切。
-private struct NoCacheAsyncImage: View {
-    let url: URL?
-    var height: CGFloat
-    @State private var image: Image?
-    @State private var failed = false
-
-    var body: some View {
-        ZStack {
-            if let image {
-                image
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                placeholder
-            }
-        }
-        // 固定高度 + 裁剪，保证 fill 模式下溢出的部分被切掉
-        .frame(height: height)
-        .frame(maxWidth: .infinity)
-        .clipped()
-        .task(id: url) { if let url { await load(url) } }
+        // 固定高度，宽度由父容器决定；reading 实际宽度后裁剪
+        Color.clear
+            .frame(height: height)
+            .overlay(
+                GeometryReader { geo in
+                    KFImage(url.flatMap { URL(string: $0) })
+                        .placeholder { coverPlaceholder }
+                        .onFailureView { coverPlaceholder }
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: height)
+                        .clipped()
+                }
+            )
+            .clipped()
     }
 
-    @ViewBuilder
-    private var placeholder: some View {
+    private var coverPlaceholder: some View {
         LinearGradient(colors: [.bronzeDeep, Color.bronze],
                        startPoint: .topLeading, endPoint: .bottomTrailing)
             .overlay {
-                if failed {
-                    Image(systemName: "building.columns.fill")
-                        .font(.system(size: 40)).opacity(0.2).foregroundStyle(.white)
-                } else {
-                    ProgressView().tint(.white)
-                }
+                Image(systemName: "building.columns.fill")
+                    .font(.system(size: 40)).opacity(0.2).foregroundStyle(.white)
             }
-    }
-
-    @MainActor
-    private func load(_ url: URL) async {
-        image = nil
-        failed = false
-        var request = URLRequest(url: url)
-        request.cachePolicy = .reloadIgnoringLocalCacheData
-        request.setValue("MuseumGuide/1.0", forHTTPHeaderField: "User-Agent")
-        do {
-            let (data, resp) = try await URLSession.shared.data(for: request)
-            guard let http = resp as? HTTPURLResponse, http.statusCode == 200,
-                  let uiImage = UIImage(data: data) else {
-                failed = true
-                return
-            }
-            image = Image(uiImage: uiImage)
-        } catch {
-            failed = true
-        }
     }
 }
 
