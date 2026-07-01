@@ -22,20 +22,45 @@ router = APIRouter(prefix="/api/museums", tags=["museums"])
 
 @router.get("", response_model=MuseumListResponse)
 async def museum_list(db: Session = Depends(get_db)):
-    """所有支持的博物馆列表。"""
+    """支持的博物馆列表。
+
+    只返回数据完整的博物馆（有建筑图 + 有楼层 + 展品≥3 + 至少1条讲解），
+    数据不全的暂不展示，保证用户看到的每家都有可用的内容。
+    """
+    # 一次性聚合：每馆的 active 展品数
+    exhibit_counts = dict(db.execute(
+        select(Exhibit.museum_id, func.count(Exhibit.id))
+        .where(Exhibit.status == "active")
+        .group_by(Exhibit.museum_id)
+    ).all())
+
+    # 每馆的讲解数
+    narration_counts = dict(db.execute(
+        select(Exhibit.museum_id, func.count(Narration.id))
+        .join(Exhibit, Narration.exhibit_id == Exhibit.id)
+        .group_by(Exhibit.museum_id)
+    ).all())
+
+    # 每馆的楼层数
+    floor_counts = dict(db.execute(
+        select(Floor.museum_id, func.count(Floor.id))
+        .group_by(Floor.museum_id)
+    ).all())
+
     museums = db.scalars(select(Museum).order_by(Museum.id)).all()
+
     items = []
     for m in museums:
-        count = db.scalar(
-            select(func.count(Exhibit.id)).where(
-                Exhibit.museum_id == m.id, Exhibit.status == "active"
-            )
-        )
-        items.append(MuseumListItem(
-            id=m.id, name=m.name, city=m.city,
-            description=m.description, exhibit_count=count or 0,
-            cover_image_url=m.cover_image_url,
-        ))
+        ex_cnt = exhibit_counts.get(m.id, 0)
+        narr_cnt = narration_counts.get(m.id, 0)
+        floor_cnt = floor_counts.get(m.id, 0)
+        # 完整度门槛：有建筑图 + 有楼层 + 展品≥3 + 至少1条讲解
+        if m.cover_image_url and floor_cnt > 0 and ex_cnt >= 3 and narr_cnt >= 1:
+            items.append(MuseumListItem(
+                id=m.id, name=m.name, city=m.city,
+                description=m.description, exhibit_count=ex_cnt,
+                cover_image_url=m.cover_image_url,
+            ))
     return MuseumListResponse(total=len(items), museums=items)
 
 
